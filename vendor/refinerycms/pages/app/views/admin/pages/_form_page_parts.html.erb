@@ -1,3 +1,5 @@
+<% change_layout = RefinerySetting.find_or_set(:change_page_layout, false)  %>
+<% change_layout = false if @page.respond_to? (:new_record?) and @page.new_record?  %>
 <% if RefinerySetting.find_or_set(:new_page_parts, false) %>
   <ul id="page_parts_controls">
     <li>
@@ -18,7 +20,16 @@
   <ul id='page_parts'>
   <% @page.parts.each_with_index do |part, part_index| %>
     <li class='ui-state-default<%= ' ui-state-active' if part_index == 0 %>'>
-      <%= link_to part.title, "##{@page.new_record? ? "page_part_new_#{part_index}" : part.to_param}" %>
+      <% if change_layout %>
+        <%= link_to t("page_layouts.#{@page.try(:layout).name}.#{part.name}", :default => part.name.titleize), "##{@page.new_record? ? "page_part_new_#{part_index}" : part.to_param}" %>
+      <% else %>
+        <%= link_to part.name.titleize, "##{@page.new_record? ? "page_part_new_#{part_index}" : part.to_param}" %>
+      <% end %>
+    </li>
+  <% end %>
+  <% if change_layout %>
+    <li class='ui-state-default' style="float:right;">
+      <%= link_to 'Layout', '#', :id => 'change_layout' %>
     </li>
   <% end %>
   </ul>
@@ -32,6 +43,32 @@
                    :part_index => (part_index += 1),
                    :new_part => @page.new_record?
                  } -%>
+    <% end %>
+    <% if change_layout %>
+      <div class="dialog" id="page_layout_dialog" style="display:none">
+      <input id="authenticity_token" type="hidden" value="<%= form_authenticity_token() %>">
+
+        <div style="width:100%; border: 1px solid grey; background-color: #f2f2f2; height:auto;" class="clearfix">
+          <p class="field">
+            <%= @page.has_layout? == true ? "The current layout is <strong>#{@page.layout.name}</strong>" : "The page has no layout set." %>
+          </p>
+          <p>
+            Change it to
+            <select id="page_layout_picker">
+              <%= options_for_select((PageLayout.all.collect {|layout| [layout.name.titleize, layout.name] }).unshift(['None', nil]),
+                                     (@page.has_layout? == true ? @page.layout.name : nil)) %>
+            </select>
+          </p>
+          <div id="page_layout_migration">
+            <h3>Original parts</h3>
+            <ul id="page_layout_migrate_from" class="migrate_box"></ul>
+            <h3>Selected layout</h3>
+            <div id="page_layout_migrate_to"></div>
+          </div>
+
+          <button id="page_layout_commit_change" class="clearfix">Commit layout change</button>
+        </div>
+      </div>
     <% end %>
   </div>
 </div>

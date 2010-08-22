@@ -1492,3 +1492,39 @@ input.button.close_dialog:active, a.button.close_dialog:active, #content a.butto
   -moz-border-radius: 6px;
   -webkit-border-radius: 6px;
 }
+
+#page_layout_migrate_from {
+ padding: 0;
+}
+
+li.migrate_from {
+  list-style: none;
+  margin:     5px;
+  padding:    3px;
+  display:    inline;
+  border:     1px solid #ccc;
+}
+
+div.migrate_to_container, div.migrate_cancel_container {
+  margin:  5px;
+  padding: 5px;
+  display: block;
+  border:  1px solid #aaa; 
+}
+
+div.migrate_to_container p, div.migrate_cancel_container p {
+  display: inline;
+}
+
+ul.migrate_to, ul.migrate_cancel {
+  border:  1px solid #000; 
+  padding: 15px;
+  margin:  0px;
+  height:  15px;
+}
+.label_with_help span.help {
+  font-weight: normal;
+  margin-left: 3px;
+  border-bottom: 1px dotted #727272;
+  cursor: help;
+}

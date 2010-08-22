@@ -5,6 +5,10 @@ Refinery::Application.routes.draw do
     resources :pages do
       collection do
         post :update_positions
+        get :new_choose_page_layout
+      end
+      member do
+        post :migrate_layout
       end
     end
 

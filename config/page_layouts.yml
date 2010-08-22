@@ -1,0 +1,6 @@
+homepage:
+  parts: [main, sale, right, bottom]
+two:
+  parts: [the_quick, brown_fox]
+another:
+  parts: [jumps, over_the_lazy_dog]

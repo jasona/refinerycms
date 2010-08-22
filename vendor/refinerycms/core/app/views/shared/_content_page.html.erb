@@ -34,8 +34,16 @@
   end
 -%>
 <div id='body_content' class='clearfix<%= " #{css.join(' ')}" if css.any? %>'>
+<% if @page.has_layout? %>
+  <% begin %>
+     <%= render(:file => @page.layout.partial).html_safe %>
+  <% rescue ActionView::MissingTemplate => e %>
+    <% raise "The template ('#{@page.layout.partial}') for layout #{@page.layout.name} cannot be found!" %>
+  <% end %>
+<% else %>
   <% sections.each do |s| %>
     <%= s[:html].html_safe %>
   <% end %>
+<% end %>
 </div>
 <%= render :partial => '/shared/draft_page_message' unless @page.nil? or @page.live? -%>

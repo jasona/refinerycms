@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20100729221735) do
+ActiveRecord::Schema.define(:version => 20100822151312) do
 
   create_table "images", :force => true do |t|
     t.string   "image_mime_type"
@@ -46,7 +46,7 @@ ActiveRecord::Schema.define(:version => 20100729221735) do
 
   create_table "page_parts", :force => true do |t|
     t.integer  "page_id"
-    t.string   "title"
+    t.string   "name"
     t.text     "body"
     t.integer  "position"
     t.datetime "created_at"
@@ -74,6 +74,7 @@ ActiveRecord::Schema.define(:version => 20100729221735) do
     t.boolean  "draft",               :default => false
     t.string   "browser_title"
     t.boolean  "skip_to_first_child", :default => false
+    t.string   "page_layout",         :default => "",     :null => false
   end
 
   add_index "pages", ["id"], :name => "index_pages_on_id"

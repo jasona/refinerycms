@@ -1,0 +1,14 @@
+<div id ="content-right">
+  <%= @page[:right].html_safe %>
+</div>
+<div id="content-main">
+  <% unless @page[:sale].blank? %>
+    <div id="content-sale">
+      <%= @page[:sale].html_safe %>
+    </div>
+  <% end %>
+  <%= @page[:main].html_safe q%>
+</div>
+<div id ="content-bottom">
+  <%= @page[:bottom].html_safe %>
+</div>

@@ -1,0 +1,9 @@
+<% form_for :layout, :url => { :action => 'new' }, :html => { :method => :get} do |f| %>
+<p>
+  <%= f.label :layout %>
+  <select name="layout">
+    <%= options_for_select Theme.page_layouts.collect {|layout| [layout.name.titleize, layout.name] } %>
+  </select>
+</p>
+<%= submit_tag t('.create_page_with_layout')%>
+<% end %>

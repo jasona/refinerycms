@@ -2,11 +2,11 @@ class PagePart < ActiveRecord::Base
 
   belongs_to :page
 
-  validates_presence_of :title
+  validates_presence_of :name
   alias_attribute :content, :body
 
   def to_param
-    "page_part_#{self.title.downcase.gsub(/\W/, '_')}"
+    "page_part_#{self.name.downcase.gsub(/\W/, '_')}"
   end
 
   before_save :normalise_text_fields

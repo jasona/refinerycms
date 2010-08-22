@@ -44,6 +44,12 @@
         <%= RefinerySetting.find_or_set(:new_page_parts, false).to_s %>
         , "<%= new_admin_page_part_url(:only_path => true) %>"
         , "<%= admin_page_parts_url(:only_path => true) %>"
+        , <%= RefinerySetting.find_or_set(:change_page_layout, false).to_s%>
+        ,<%= page_layouts = Hash[*PageLayout.all.collect{ |layout| [layout.name, layout] }.flatten]
+             page_layouts[''] = { :name => 'Default', :parts => @page.parts.collect { |part| part.name }} unless @page.has_layout?
+             page_layouts.to_json.html_safe %>
+        , "<%= @page.has_layout? ? @page.layout.name : ''%>"
+        , "<%= migrate_layout_admin_page_url(@page) %>"
       );
     });
   </script>

@@ -196,20 +196,74 @@ class Page < ActiveRecord::Base
   #    Page.first[:body]
   #
   # Will return the body page part of the first page.
-  def [](part_title)
+  def [](part_name)
     # don't want to override a super method when trying to call a page part.
-    # the way that we call page parts seems flawed, will probably revert to page.parts[:title] in a future release.
+    # the way that we call page parts seems flawed, will probably revert to page.parts[:name] in a future release.
     if (super_value = super).blank?
-      # self.parts is already eager loaded so we can now just grab the first element matching the title we specified.
+      # self.parts is already eager loaded so we can now just grab the first element matching the name we specified.
       part = self.parts.detect do |part|
-        part.title == part_title.to_s or
-        part.title.downcase.gsub(" ", "_") == part_title.to_s.downcase.gsub(" ", "_")
+        part.name == part_name.to_s or
+        part.name.downcase.gsub(" ", "_") == part_name.to_s.downcase.gsub(" ", "_")
       end
 
       return part.body unless part.nil?
     end
 
     super_value
+  end
+
+  def has_layout?
+    not self.page_layout.blank?
+  end
+
+  def layout
+    PageLayout.all.find_by_name self.page_layout
+  end
+
+  # Migrate the parts of this page to match another layout.
+  def migrate_layout_to layout, available_parts, parts
+    # First some checks to make sure this migration is valid
+    layout = PageLayout.all.find_by_name layout
+    raise "There is no such layout" if layout.nil?
+    raise "The parts do not match. Layout:#{layout.parts.sort.inspect} Requested: #{available_parts.sort.inspect}" if layout.parts.sort != available_parts.sort
+    raise "The following parts are not in the requested layout. Layout:#{layout.parts.sort.inspect} Requested: #{available_parts.sort.inspect}" if layout.parts.reject { |name| available_parts.member?(name) }.any?
+
+    # Create new part contents from the current ones
+    new_part_contents = {}
+    parts.each do |part, imports|
+      new_part_contents[part] = ""
+      imports.each do |import|
+        if (not import.blank?) and (not (imported_content = self[import]).blank?)
+          new_part_contents[part] << imported_content
+        end
+      end
+    end
+
+    self.page_layout = layout.name
+    unless self.save
+      raise "The layout could not be switched!"
+    end
+
+    # Destroy all the current parts
+    self.parts.each do |part|
+      part.destroy
+    end
+
+    # Create the new parts
+    new_part_contents.each do |name, value|
+      new_part = self.parts.build
+      new_part.name = name
+      new_part.content = value
+      new_part.save!
+    end
+
+    # Create empty parts
+    empty_parts = available_parts.collect { |x| x.to_s } - new_part_contents.keys.collect { |x| x.to_s }
+    empty_parts.each do |name|
+      new_part = self.parts.build
+      new_part.name = name
+      new_part.save!
+    end
   end
 
   # In the admin area we use a slightly different title to inform the which pages are draft or hidden pages

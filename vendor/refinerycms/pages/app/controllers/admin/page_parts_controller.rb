@@ -2,7 +2,7 @@ class Admin::PagePartsController < Admin::BaseController
 
   def new
     render :partial => "/admin/pages/page_part_field", :locals => {
-      :part => PagePart.new(:title => params[:title], :body => params[:body]),
+      :part => PagePart.new(:name => params[:name], :body => params[:body]),
       :new_part => true,
       :part_index => params[:part_index]
     }
@@ -13,9 +13,9 @@ class Admin::PagePartsController < Admin::BaseController
     page = part.page
     if part.destroy
       page.reposition_parts!
-      render :text => "'#{part.title}' deleted."
+      render :text => "'#{part.name}' deleted."
     else
-      render :text => "'#{part.title}' not deleted."
+      render :text => "'#{part.name}' not deleted."
     end
   end
 
