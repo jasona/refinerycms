@@ -43,6 +43,10 @@ path 'vendor/refinerycms' do
   gem 'refinerycms-settings',       :require => 'settings'
 end
 
+# Specify additional Refinery CMS Engines here:
+# gem 'refinerycms-news',       '~> 0.9.8', :require => 'news'
+# gem 'refinerycms-portfolio',  '~> 0.9.7', :require => 'portfolio'
+
 # Add i18n support
 gem 'refinerycms-i18n', :git => 'git://github.com/resolve/refinerycms-i18n.git',
                         :branch => 'master',
@@ -53,10 +57,6 @@ gem 'routing-filter'
 gem 'acts_as_tree',     :git => 'git://github.com/parndt/acts_as_tree.git',
                         :branch => 'master'
 
-# Specify additional Refinery CMS Engines here:
-# gem 'refinerycms-news',       '~> 0.9.8', :require => 'news'
-# gem 'refinerycms-portfolio',  '~> 0.9.7', :require => 'portfolio'
-
 # Specify a version of RMagick that works in your environment:
 gem 'rmagick',          '~> 2.12.0', :require => false
 
@@ -66,17 +66,17 @@ gem 'dragonfly',        :git => 'git://github.com/parndt/dragonfly.git',
                         :require => 'dragonfly'
 
 # END REFINERY CMS ============================================================
-                 
+
 # REFINERY CMS DEVELOPMENT ====================================================
 
 group :test do
-  gem 'json_pure',          '= 1.4.6', :require => 'json/pure'
-
+  # RSpec
   gem 'rspec',              (RSPEC_VERSION = '~> 2.0.0.beta.19')
   gem 'rspec-core',         RSPEC_VERSION, :require => 'rspec/core'
   gem 'rspec-expectations', RSPEC_VERSION, :require => 'rspec/expectations'
   gem 'rspec-mocks',        RSPEC_VERSION, :require => 'rspec/mocks'
   gem 'rspec-rails',        RSPEC_VERSION
+  # Cucumber
   gem 'capybara'
   gem 'database_cleaner'
   gem 'cucumber-rails'
@@ -84,8 +84,15 @@ group :test do
   gem 'spork' unless RUBY_PLATFORM =~ /mswin|mingw/
   gem 'launchy'
   gem 'gherkin'
+  # FIXME: JSON constant constants warnings
+  gem 'json_pure',          '= 1.4.6', :require => 'json/pure'
+  # Factory Girl
   gem 'factory_girl'
   gem 'ruby-prof'
+  # Autotest
+  gem 'autotest'
+  gem 'autotest-rails'
+  gem 'autotest-notification'
 end
 
 # END REFINERY CMS DEVELOPMENT =================================================

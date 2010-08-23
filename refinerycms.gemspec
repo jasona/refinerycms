@@ -1,29 +1,23 @@
 Gem::Specification.new do |s|
   s.name              = %q{refinerycms}
-  s.version           = %q{0.9.8.beta1.pre}
+  s.version           = %q{0.9.8.0.beta1.pre}
   s.description       = %q{A beautiful open source Ruby on Rails content manager for small business. Easy to extend, easy to use, lightweight and all wrapped up in a super slick UI.}
-  s.date              = %q{2010-08-21}
+  s.date              = %q{2010-08-23}
   s.summary           = %q{A beautiful open source Ruby on Rails content manager for small business.}
   s.email             = %q{info@refinerycms.com}
   s.homepage          = %q{http://refinerycms.com}
-  s.authors           = %w(Resolve\ Digital David\ Jones Philip\ Arndt)
+  s.authors           = ['Resolve Digital', 'David Jones', 'Philip Arndt']
   s.require_paths     = %w(lib)
   s.executables       = %w(refinerycms)
 
-  s.add_dependency    'rails', '3.0.0.rc'
+  s.add_dependency    'rails',      '~> 3.0.0.rc'
+  s.add_dependency    'bundler',    '~> 1.0'
+  s.add_dependency    'childlabor'
 
   s.files             = [
     '.gitignore',
-    #'.yardopts',
+    '.yardopts',
     'Gemfile',
-=begin
-    'Rakefile',
-    'changelog.md',
-    'license.md',
-    'readme.md',
-    'todo.md',
-    'config.ru',
-=end
     'app/controllers',
     'app/controllers/admin',
     'app/controllers/admin/base_controller.rb',
@@ -34,29 +28,13 @@ Gem::Specification.new do |s|
     'app/models',
     'app/views',
     'bin/refinerycms',
-=begin    
-    'config/application.rb',
-    'config/boot.rb',
-    'config/cucumber.yml',
     'config/database.yml.mysql',
     'config/database.yml.postgresql',
     'config/database.yml.sqlite3',
-    'config/environment.rb',
-    'config/environments',
-    'config/environments/development.rb',
-    'config/environments/production.rb',
-    'config/environments/test.rb',
-    'config/i18n-js.yml',
-=end
-    #'config/initializers',
+    'config/initializers',
     'config/initializers/acts_as_indexed_config.rb',
-    #'config/initializers/backtrace_silencers.rb',
     'config/initializers/field_with_error_fix.rb',
     'config/initializers/fix_rack.rb',
-    #'config/initializers/inflections.rb',
-    #'config/initializers/mime_types.rb',
-    #'config/initializers/secret_token.rb',
-    #'config/initializers/session_store.rb',
     'config/routes.rb',
     'config/settings.rb',
     'db/migrate',
@@ -97,50 +75,6 @@ Gem::Specification.new do |s|
     'db/seeds/pages.rb',
     'db/seeds/refinery_settings.rb',
     'db/seeds.rb',
-=begin
-    'features/refinery',
-    'features/refinery/create_inquiries.feature',
-    'features/refinery/dashboard.feature',
-    'features/refinery/engine_generator.feature',
-    'features/refinery/lost_password.feature',
-    'features/refinery/manage_files.feature',
-    'features/refinery/manage_images.feature',
-    'features/refinery/manage_inquiries.feature',
-    'features/refinery/manage_pages.feature',
-    'features/refinery/manage_refinery_settings.feature',
-    'features/refinery/manage_users.feature',
-    'features/refinery/search.feature',
-    'features/refinery/site_bar.feature',
-    'features/step_definitions',
-    'features/step_definitions/refinery',
-    'features/step_definitions/refinery/core_steps.rb',
-    'features/step_definitions/refinery/engine_generator_steps.rb',
-    'features/step_definitions/refinery/file_steps.rb',
-    'features/step_definitions/refinery/generator_steps.rb',
-    'features/step_definitions/refinery/image_steps.rb',
-    'features/step_definitions/refinery/inquiry_steps.rb',
-    'features/step_definitions/refinery/lost_password.rb',
-    'features/step_definitions/refinery/page_steps.rb',
-    'features/step_definitions/refinery/user_steps.rb',
-    'features/step_definitions/web_steps.rb',
-    'features/support',
-    'features/support/env.rb',
-    'features/support/factories.rb',
-    'features/support/negative_expectations_helper.rb',
-    'features/support/paths.rb',
-    'features/uploads',
-    'features/uploads/beach.jpeg',
-    'features/uploads/id-rather-be-here.jpg',
-    'features/uploads/refinery_is_awesome.txt',
-    'lib/gemspec.rb',
-    'lib/tasks',
-    'lib/tasks/cucumber.rake',
-    'lib/tasks/friendly_id.rake',
-    'lib/tasks/rspec.rake',
-    'script/cucumber',
-    'script/rails',
-    'vendor/plugins',
-=end
     'vendor/refinerycms',
     'vendor/refinerycms/authentication',
     'vendor/refinerycms/authentication/app',

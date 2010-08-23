@@ -1,8 +1,4 @@
 #!/usr/bin/env ruby
-require 'pathname'
-require 'fileutils'
-require 'optparse'
-
 # Load bundler
 begin
   require 'rubygems'
@@ -14,6 +10,13 @@ rescue LoadError
   exit
 end
 
+# Load other required libraries
+require 'pathname'
+require 'fileutils'
+require 'optparse'
+
+require 'child_labor' if RUBY_PLATFORM !~ /mswin3?2?/
+
 # Load refinerycms
 require Pathname.new(File.expand_path(File.dirname(__FILE__) << "/..")).join('vendor', 'refinerycms', 'core', 'lib', 'refinery.rb')
 
@@ -24,7 +27,7 @@ module Refinery
       # Default options
       @input = input
       @options = {
-        :database => :sqlite3,
+        :database => 'sqlite3',
         :force => false
       }
 
@@ -36,7 +39,7 @@ module Refinery
         opts.separator "Specific Options:"
 
         # Rails supports more options, but Refinery is only tested on these three
-        databases = [:mysql, :postgresql, :sqlite3]
+        databases = %w(mysql postgresql sqlite3)
         opts.on("-d DATABASE", "--database DATABASE", databases, "Select the database (default sqlite3)", "  #{databases.join('/')}") do |db|
           @options[:database] = db
         end
@@ -61,6 +64,21 @@ module Refinery
     end
 
     def run!
+      # Grab input and ensure that the path doesn't exist already and other checks.
+      validate!
+
+      # Generate a Refinery CMS application
+      generate!
+
+      # Add in the Refinery specifics to the application
+      refine!
+
+      # Output helpful messages to user
+      output!
+    end
+
+
+    def validate!
       # Check for valid input
       begin
         @optparse.parse!(@input)
@@ -82,24 +100,70 @@ module Refinery
       # Get the name and path of the new application
       @app_path = Pathname.new(File.expand_path(@input.first))
       @app_name = @app_path.to_s.split(File::SEPARATOR).last
-      
-      # Generate a Refinery CMS application
-      generate!
+
+      if @app_path.directory? and @options[:force] == false
+        puts "The directory '#{@app_path}' that you specified already exists."
+        puts "Use --force to overwrite an existing directory."
+        exit
+      end
     end
-  
-    private
-    
+
     def generate!
       # Generate a rails application
       rails_command = "rails new #{@app_path}"
       rails_command << " --database #{@options[:database]}"
       rails_command << " --force" if @options[:force]
       rails_command << " --skip-test-unit --skip-prototype"
-      run_command(rails_command, false)
-      
-      # Add in the Refinery specifics to the application
-      refine!
+      run_command(rails_command, {:cd => false})
+    end
 
+    def refine!
+      # Overwrite rails defaults with refinery defaults
+      %w(app db).each do |folder|
+        FileUtils::cp_r Refinery.root.join(folder), @app_path, :verbose => false
+      end
+      %w(.gitignore config/routes.rb config/settings.rb config/initializers/acts_as_indexed_config.rb
+          config/initializers/field_with_error_fix.rb config/initializers/fix_rack.rb).each do |file|
+        FileUtils::cp_r Refinery.root.join(file), @app_path.join(file), :verbose => false
+      end
+
+      # Remove public/index.html
+      if (rails_index_placeholder = @app_path.join('public', 'index.html')).exist?
+        FileUtils::rm rails_index_placeholder.to_s
+      end
+
+      if (app_layout = @app_path.join('app', 'views', 'layouts', 'application.html.erb')).exist?
+        FileUtils::rm app_layout.to_s
+      end
+
+      # Add refinery gems to the Gemfile
+      gemfile_contents = File.read(Refinery.root.join('Gemfile'))
+      refinery_gems = gemfile_contents.match(/# REFINERY CMS =+.*# END REFINERY CMS =+/m)[0]
+      File.open(@app_path.join('Gemfile'), "a") do |f|
+        f.write "\n" + refinery_gems
+      end
+
+      # Hack to make work on development computers
+      # TODO: Change this when/if separate gems are released for each engine
+      find_and_replace('Gemfile', "path 'vendor/refinerycms' do",
+                        "path '#{Pathname.new(File.expand_path(File.dirname(__FILE__) << "/..")).join('vendor').to_s}/refinerycms' do")
+
+      # Replace app constant with Refinery
+      # TODO: Find a way around this
+      camelized_app_name = @app_name.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
+      %w(Rakefile config.ru config/application.rb config/environment.rb
+          config/environments/development.rb config/environments/production.rb config/environments/test.rb
+          config/initializers/secret_token.rb config/initializers/session_store.rb).each do |hackable|
+        find_and_replace(hackable, camelized_app_name, "Refinery")
+      end
+
+      # Remove development specific stuff from the .gitinore file
+      find_and_replace('.gitignore',
+                       /# REFINERY CMS DEVELOPMENT =+.*# END REFINERY CMS DEVELOPMENT =+/m,
+                       '')
+    end
+
+    def output!
       puts "\n---------"
       puts "Refinery successfully installed in '#{@app_path}'!\n\n"
 
@@ -122,67 +186,55 @@ module Refinery
       puts "---------\n\n"
     end
 
-    def refine!
-      # Overwrite rails defaults with refinery defaults
-      %w(app db).each do |folder|
-        FileUtils::cp_r Refinery.root.join(folder), @app_path, :verbose => false
-      end
-      %w(.gitignore config/routes.rb config/settings.rb config/initializers/acts_as_indexed_config.rb 
-          config/initializers/field_with_error_fix.rb config/initializers/fix_rack.rb).each do |file|
-        FileUtils::cp_r Refinery.root.join(file), @app_path.join(file), :verbose => false
-      end
-      
-      # Remove public/index.html
-      FileUtils::rm @app_path.join('public', 'index.html')
-      
-      # Add refinery gems to the Gemfile
-      gemfile_contents = File.read(Refinery.root.join('Gemfile'))
-      refinery_gems = gemfile_contents.match(/# REFINERY CMS =+.*# END REFINERY CMS =+/m)[0]
-      File.open(@app_path.join('Gemfile'), "a") do |f|
-        f.write "\n" + refinery_gems
-      end
-      
-      # Hack to make work on development computers
-      # TODO: Change this when/if separate gems are released for each engine
-      find_and_replace('Gemfile', "path 'vendor/refinerycms' do", 
-                        "path '#{Pathname.new(File.expand_path(File.dirname(__FILE__) << "/..")).join('vendor').to_s}/refinerycms' do")
+    private :validate!, :generate!, :refine!, :output!
 
-      # Replace app constant with Refinery
-      # TODO: Find a way around this
-      camelized_app_name = @app_name.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
-      %w(Rakefile config.ru config/application.rb config/environment.rb
-          config/environments/development.rb config/environments/production.rb config/environments/test.rb
-          config/initializers/secret_token.rb config/initializers/session_store.rb).each do |hackable|
-        find_and_replace(hackable, camelized_app_name, "Refinery")
-      end
-
-      # Remove development specific stuff from the .gitinore file
-      find_and_replace('.gitignore', 
-                       /# REFINERY CMS DEVELOPMENT =+.*# END REFINERY CMS DEVELOPMENT =+/m, 
-                       '')
-    end
-
-    protected
-
-    def run_command(command, cd = true)
-      to_run = (RUBY_PLATFORM =~ /mswin32/ ? "cmd /c " : "")
-      to_run << "cd #{@app_path} && " if cd
+    def run_command(command, options = {})
+      options = {:cd => true, :puts => true}.merge(options)
+      to_run = ((forkable = RUBY_PLATFORM !~ /mswin3?2?/) ? "" : "cmd /c ")
+      to_run << "cd #{@app_path} && " if options[:cd]
       to_run << command
 
-      puts "Running: " + to_run
-      puts `#{to_run}`
-    end
-    
-    def find_and_replace(file, find, replace)
-      contents = File.read(@app_path.join(file))
-      contents.gsub!(find, replace)
-      File.open(@app_path + file, "w") do |f|
-        f.puts contents  
+      if forkable
+        if options[:puts]
+          puts "Running: #{to_run}"
+          ::ChildLabor.subprocess(to_run) do |t|
+            while (line = t.gets)
+              puts line
+            end
+          end
+        else
+          ::ChildLabor.subprocess(to_run)
+        end
+      else
+        if options[:puts]
+          puts "Running: #{to_run}"
+          IO.popen(to_run) do |t|
+            while (line = t.gets)
+              puts line
+            end
+          end
+        else
+          `#{to_run}`
+        end
       end
     end
 
+    def find_and_replace(file, find, replace)
+      (contents = @app_path.join(file).read).gsub!(find, replace)
+      (@app_path + file).open("w") do |f|
+        f.puts contents
+      end
+    end
+
+    protected :run_command, :find_and_replace
   end
 end
 
-generator = Refinery::AppGenerator.new(ARGV)
-generator.run!
+unless !defined?(::ChildLabor::Task) or ::ChildLabor::Task.instance_methods.include?(:gets)
+  ::ChildLabor::Task.module_eval do
+    def gets
+      @stdout.gets
+    end
+  end
+end
+Refinery::AppGenerator.new(ARGV).run!
