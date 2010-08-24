@@ -13,9 +13,6 @@ en:
         save: Save
         cancel: Cancel
   refinery:
-    other: Other %{what}
-    reorder: Reorder %{what}
-    reorder_done: Done Reordering %{what}
     crudify:
       created: %{what} was successfully created.
       updated: %{what} was successfully updated.
@@ -53,6 +50,7 @@ en:
         message: Are you sure you want to delete '%{title}'?
       error_messages:
         problems_in_following_fields: There were problems with the following fields
+      help: help
     message:
       close: Close
       close_this_message: Close this message
