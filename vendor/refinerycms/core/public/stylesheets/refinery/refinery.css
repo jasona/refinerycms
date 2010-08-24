@@ -749,6 +749,11 @@ label.stripped {
 #records.tree .actions a img {
   padding-top: 4px;
 }
+#image_grid .title {
+  display:block;
+  line-height:10px;
+clear:both;
+}
 #image_grid .actions a img {
   padding: 4px 4px 1px 4px;
   vertical-align: top;
@@ -1211,10 +1216,10 @@ ul#image_grid li {
   padding: 0px;
   width: 124px;
   text-align: center;
-  height: 165px;
+  height: 185px;
   overflow: hidden;
   max-width: 124px;
-  max-height: 165px;
+  max-height: 185px;
 }
 ul#image_grid li.image_4 {
   margin-left: 1px;

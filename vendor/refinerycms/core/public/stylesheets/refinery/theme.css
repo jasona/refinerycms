@@ -34,3 +34,14 @@
 .font-size-large {
   font-size: 1.25em;
 }
+
+/* clear containers */
+.clear-left {
+  clear:left;
+}
+.clear-right {
+  clear:right;
+}
+.clear-both {
+  clear:both;
+}

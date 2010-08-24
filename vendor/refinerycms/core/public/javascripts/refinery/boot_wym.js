@@ -33,6 +33,7 @@ var wymeditor_boot_options = $.extend({
     {name: 'text-align', rules:['left', 'center', 'right', 'justify'], join: '-'}
     , {name: 'image-align', rules:['left', 'right'], join: '-'}
     , {name: 'font-size', rules:['small', 'normal', 'large'], join: '-'}
+    , {name: 'clear', rules:['left', 'right', 'both'], join: '-'}
   ]
 
   , containersItems: [
