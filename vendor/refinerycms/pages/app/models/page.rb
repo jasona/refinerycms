@@ -8,16 +8,34 @@ class Page < ActiveRecord::Base
   has_friendly_id :title, :use_slug => true,
                   :reserved_words => %w(index new session login logout users refinery admin images wymiframe)
 
-  has_many :parts,
-           :class_name => "PagePart",
-           :order => "position ASC",
-           :inverse_of => :page
+  has_many :translations, :class_name => "::PageTranslation" do
+    def default
+      find_by_locale I18n.default_locale.to_s
+    end
 
-  accepts_nested_attributes_for :parts,
-                                :allow_destroy => true
+    def current
+      find_by_locale I18n.locale.to_s
+    end
 
+    def default_locale
+      I18n.default_locale.to_s
+    end
+  end
+
+  delegate :title, :parts, :meta_keywords, :custom_title, :browser_title,  :to => 'translations.current'
+
+  def translated_to
+    translations.select("DISTINCT page_translations.locale").collect { |translation| translation.locale }
+  end
+
+  def add_translation locale
+    
+  end
+
+
+  # TODO: Find out how to get this working again
   # Docs for acts_as_indexed http://github.com/dougal/acts_as_indexed
-  acts_as_indexed :fields => [:title, :meta_keywords, :meta_description, :custom_title, :browser_title, :all_page_part_content]
+  #acts_as_indexed :fields => [:title, :meta_keywords, :meta_description, :custom_title, :browser_title, :all_page_part_content]
 
   before_destroy :deletable?
   after_save :reposition_parts!
@@ -42,8 +60,10 @@ class Page < ActiveRecord::Base
   # Repositions the child page_parts that belong to this page.
   # This ensures that they are in the correct 0,1,2,3,4... etc order.
   def reposition_parts!
-    self.parts.each_with_index do |part, index|
-      part.update_attribute(:position, index)
+    self.translations.each do |translation|
+      translation.parts.each_with_index do |part, index|
+        part.update_attribute(:position, index)
+      end
     end
   end
 

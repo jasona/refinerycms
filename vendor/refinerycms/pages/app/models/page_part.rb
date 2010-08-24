@@ -1,6 +1,6 @@
 class PagePart < ActiveRecord::Base
 
-  belongs_to :page
+  belongs_to :page_translation
 
   validates :title, :presence => true
   alias_attribute :content, :body
