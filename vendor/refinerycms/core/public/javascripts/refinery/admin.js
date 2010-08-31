@@ -1,7 +1,6 @@
 var shiftHeld = false;
 $(document).ready(function(){
   init_interface();
-  init_flash_messages();
   init_sortable_menu();
   init_submit_continue();
   init_modal_dialogs();
@@ -82,15 +81,6 @@ init_interface = function() {
     $('#other_locales').animate({opacity: 'toggle', height: 'toggle'}, 250);
     e.preventDefault();
   });
-}
-
-init_flash_messages = function(){
-  $('#flash').fadeIn(550);
-  $('#flash_close').click(function(e) {
-     $('#flash').fadeOut({duration: 330});
-     e.preventDefault();
-  });
-  $('#flash.flash_message').prependTo('#records');
 }
 
 init_modal_dialogs = function(){
@@ -811,26 +801,34 @@ var image_dialog = {
       $('#existing_image_area_content ul li.selected').removeClass('selected');
 
       $(img).parent().addClass('selected');
-      var imageUrl = parseURL($(img).attr('src'));
-      var imageThumbnailSize = $('#existing_image_size_area li.selected a').attr('rel');
-      if (!imageThumbnailSize) {
-        imageThumbnailSize = '';
+      var imageId = $(img).attr('data-id');
+      var imageThumbnailSize = $('#existing_image_size_area li.selected a').attr('data-size');
+      var resize = $("#wants_to_resize_image").is(':checked');
+
+      if (resize) {
+        var url = '/refinery/images/'+imageId+'/url?size='+imageThumbnailSize;
       } else {
-        imageThumbnailSize = '_' + imageThumbnailSize;
-      }
-      //alert(imageThumbnailSize);
-      var relevant_src = imageUrl.pathname.replace('_dialog_thumb', imageThumbnailSize) + '?' + imageUrl.options;
-      if (imageUrl.protocol == "" && imageUrl.hostname == "assets") {
-        relevant_src = "/assets" + relevant_src;
+        var url = '/refinery/images/'+imageId+'/url'
       }
 
-      if(imageUrl.hostname.match(/s3.amazonaws.com/)){
-        relevant_src = imageUrl.protocol + '//' + imageUrl.host + relevant_src;
-      }
+      var data;
+      $.ajax({ async: false,
+               url: url,
+               success: function (result, status, xhr) {
+                 if (result.error) {
+                   alert("Something went wrong with the image insertion!");
+                 } else {
+                   data = result;
+                 }
+               },
+               error: function(xhr, txt, status) {
+                 alert("Something went wrong with the image insertion!");
+               }
+             });
 
       if (parent) {
         if ((wym_src = parent.document.getElementById('wym_src')) != null) {
-          wym_src.value = relevant_src;
+          wym_src.value = data.url
         }
         if ((wym_title = parent.document.getElementById('wym_title')) != null) {
           wym_title.value = $(img).attr('title');

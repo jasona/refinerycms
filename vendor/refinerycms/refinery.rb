@@ -1,4 +1,5 @@
 module Refinery
+
   class << self
     attr_accessor :is_a_gem, :root, :s3_backend, :base_cache_key
     def is_a_gem
@@ -6,7 +7,7 @@ module Refinery
     end
 
     def root
-      @root ||= Pathname.new(File.dirname(__FILE__).split("vendor").first.to_s)
+      @root ||= Pathname.new(File.expand_path(__FILE__).split('vendor').first.to_s)
     end
 
     def s3_backend
@@ -23,17 +24,17 @@ module Refinery
   end
 
   class Version
-    class << self
-      attr_reader :major, :minor, :tiny, :build
-    end
-
     @major = 0
     @minor = 9
     @tiny  = 8
-    @build = '0.beta1.pre'
+    @build = nil
 
-    def self.to_s
-      [@major, @minor, @tiny, @build].compact.join('.')
+    class << self
+      attr_reader :major, :minor, :tiny, :build
+
+      def to_s
+        [@major, @minor, @tiny, @build].compact.join('.')
+      end
     end
   end
 end

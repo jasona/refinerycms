@@ -18,7 +18,7 @@ require 'optparse'
 require 'child_labor' if RUBY_PLATFORM !~ /mswin3?2?/
 
 # Load refinerycms
-require Pathname.new(File.expand_path(File.dirname(__FILE__) << "/..")).join('vendor', 'refinerycms', 'core', 'lib', 'refinery.rb')
+require Pathname.new(File.expand_path(File.dirname(__FILE__) << "/..")).join('vendor', 'refinerycms', 'refinery.rb')
 
 module Refinery
   class AppGenerator
@@ -28,7 +28,8 @@ module Refinery
       @input = input
       @options = {
         :database => 'sqlite3',
-        :force => false
+        :force => false,
+        :heroku => false
       }
 
       @optparse = OptionParser.new do |opts|
@@ -46,6 +47,10 @@ module Refinery
 
         opts.on("-f", "--force", "Force overwriting of directory") do
           @options[:force] = true
+        end
+
+        opts.on("-h [APP_NAME]", "--heroku [APP_NAME]", "Set up and deploy to Heroku") do |app_name|
+          @options[:heroku] = app_name || ''
         end
 
         opts.separator ""
@@ -110,6 +115,7 @@ module Refinery
 
     def generate!
       # Generate a rails application
+      # TODO: Check output to see whether or not it worked
       rails_command = "rails new #{@app_path}"
       rails_command << " --database #{@options[:database]}"
       rails_command << " --force" if @options[:force]
@@ -122,35 +128,35 @@ module Refinery
       %w(app db).each do |folder|
         FileUtils::cp_r Refinery.root.join(folder), @app_path, :verbose => false
       end
-      %w(.gitignore config/routes.rb config/settings.rb config/initializers/acts_as_indexed_config.rb
+      %w(.gitignore config/routes.rb config/settings.rb config/environments/production.rb config/initializers/acts_as_indexed_config.rb
           config/initializers/field_with_error_fix.rb config/initializers/fix_rack.rb).each do |file|
-        FileUtils::cp_r Refinery.root.join(file), @app_path.join(file), :verbose => false
+        FileUtils::cp_r Refinery.root.join(file), @app_path.join(file), :verbose => false if Refinery.root.join(file).exist?
       end
 
-      # Remove public/index.html
-      if (rails_index_placeholder = @app_path.join('public', 'index.html')).exist?
-        FileUtils::rm rails_index_placeholder.to_s
-      end
-
-      if (app_layout = @app_path.join('app', 'views', 'layouts', 'application.html.erb')).exist?
-        FileUtils::rm app_layout.to_s
+      # Remove default application layout and public/index.html
+      %w(app/views/layouts/application.html.erb public/index.html).each do |remove|
+	      FileUtils::rm @app_path.join(remove) if @app_path.join(remove).exist?
       end
 
       # Add refinery gems to the Gemfile
+      # TODO: Allow adding extra gems in the generator
       gemfile_contents = File.read(Refinery.root.join('Gemfile'))
       refinery_gems = gemfile_contents.match(/# REFINERY CMS =+.*# END REFINERY CMS =+/m)[0]
       File.open(@app_path.join('Gemfile'), "a") do |f|
         f.write "\n" + refinery_gems
       end
 
-      # Hack to make work on development computers
-      # TODO: Change this when/if separate gems are released for each engine
-      find_and_replace('Gemfile', "path 'vendor/refinerycms' do",
-                        "path '#{Pathname.new(File.expand_path(File.dirname(__FILE__) << "/..")).join('vendor').to_s}/refinerycms' do")
+      # Change from development to production
+      find_and_replace('Gemfile', "gem 'refinerycms',              :path => '.'",
+                        "gem 'refinerycms',              '~> #{Refinery.version}'")
+
+      # Add in AWS-S3 for Heroku
+      find_and_replace('Gemfile', "# gem 'aws-s3', :require => 'aws/s3'",
+                        "gem 'aws-s3', :require => 'aws/s3'") if @options[:heroku]
 
       # Replace app constant with Refinery
       # TODO: Find a way around this
-      camelized_app_name = @app_name.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
+      camelized_app_name = @app_name.gsub(/\W/, '_').squeeze('_').gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
       %w(Rakefile config.ru config/application.rb config/environment.rb
           config/environments/development.rb config/environments/production.rb config/environments/test.rb
           config/initializers/secret_token.rb config/initializers/session_store.rb).each do |hackable|
@@ -159,8 +165,7 @@ module Refinery
 
       # Remove development specific stuff from the .gitinore file
       find_and_replace('.gitignore',
-                       /# REFINERY CMS DEVELOPMENT =+.*# END REFINERY CMS DEVELOPMENT =+/m,
-                       '')
+                       /# REFINERY CMS DEVELOPMENT =+.*# END REFINERY CMS DEVELOPMENT =+/m, '')
     end
 
     def output!
@@ -168,11 +173,30 @@ module Refinery
       puts "Refinery successfully installed in '#{@app_path}'!\n\n"
 
       # Automate
+      # TODO: Check exit codes to see whether or not these worked
       puts "Installing gem requirements using bundler..\n"
       run_command("bundle install")
 
       puts "\n\nSetting up your development database..\n"
       run_command("rake -f '#{@app_path.join('Rakefile')}' db:setup")
+
+      # Deploy to Heroku
+      if @options[:heroku]
+        puts "\n\nInitializing and committing to git..\n"
+        run_command("git init && git add . && git commit -am 'Initial Commit'")
+
+        puts "\n\nCreating Heroku app..\n"
+        run_command("heroku create #{@options[:heroku]}")
+
+        puts "\n\nPushing to Heroku (this takes time, be patient)..\n"
+        run_command("git push heroku master")
+
+        puts "\n\nSetting up the Heroku database..\n"
+        run_command("heroku rake db:setup")
+
+        puts "\n\nRestarting servers...\n"
+        run_command("heroku restart")
+      end
       # End automation
 
       # Output helpful messages
@@ -182,6 +206,12 @@ module Refinery
       puts "rails server"
       puts "\nThis will launch the built-in webserver at port 3000."
       puts "You can now see your site running in your browser at http://localhost:3000"
+
+      if @options[:heroku]
+        puts "\nIf you want files and images to work on heroku, you will need setup S3:"
+        puts "heroku config:add S3_BUCKET=XXXXXXXXX S3_KEY=XXXXXXXXX S3_SECRET=XXXXXXXXXX"
+      end
+
       puts "\nThanks for installing Refinery, enjoy creating your new application!"
       puts "---------\n\n"
     end

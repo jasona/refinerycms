@@ -5,13 +5,12 @@ class Image < ActiveRecord::Base
 
   image_accessor :image
 
-  validates :image, :presence  => { :message => I18n.t('image_specify_for_upload') },
+  validates :image, :presence  => { :message => ::I18n.t('image_specify_for_upload') },
                     :length    => { :maximum => MAX_SIZE_IN_MB.megabytes,
-                                    :message => I18n.t('image_should_be_smaller_than_max_image_size', :max_image_size => ActionController::Base.helpers.number_to_human_size(MAX_SIZE_IN_MB.megabytes)) } #,
-#                   :mime_type => { :in => %w(image/jpeg image/png image/gif),
-#                                   :message => I18n.t('image_must_be_these_formats') }
-  validates_mime_type_of :image, :in => %w(image/jpeg image/png image/gif),
-                         :message => I18n.t('image_must_be_these_formats')
+                                    :message => ::I18n.t('image_should_be_smaller_than_max_image_size',
+                                                       :max_image_size => MAX_SIZE_IN_MB.megabytes) }
+  validates_property :mime_type, :of => :image, :in => %w(image/jpeg image/png image/gif),
+                     :message => ::I18n.t('image_must_be_these_formats')
 
   # Docs for acts_as_indexed http://github.com/dougal/acts_as_indexed
   acts_as_indexed :fields => [:title]
@@ -28,16 +27,33 @@ class Image < ActiveRecord::Base
 
   delegate :size, :mime_type, :url, :width, :height, :to => :image
 
-  # How many images per page should be displayed?
-  def self.per_page(dialog = false, has_size_options = false)
-    if dialog
-      unless has_size_options
-        PAGES_PER_DIALOG
+  class << self
+    # How many images per page should be displayed?
+    def per_page(dialog = false, has_size_options = false)
+      if dialog
+        unless has_size_options
+          PAGES_PER_DIALOG
+        else
+          PAGES_PER_DIALOG_THAT_HAS_SIZE_OPTIONS
+        end
       else
-        PAGES_PER_DIALOG_THAT_HAS_SIZE_OPTIONS
+        PAGES_PER_ADMIN_INDEX
       end
+    end
+  end
+
+  # Get a thumbnail job object given a geometry.
+  def thumbnail(geometry = nil)
+    if geometry.is_a?(Symbol)
+      if (sizes = RefinerySetting.find_or_set(:image_thumbnails, {})) and sizes.keys.include?(geometry)
+        geometry = sizes[geometry].presence
+      end
+    end
+
+    if geometry.present? && !geometry.is_a?(Symbol)
+      self.image.thumb(geometry)
     else
-      PAGES_PER_ADMIN_INDEX
+      self.image
     end
   end
 

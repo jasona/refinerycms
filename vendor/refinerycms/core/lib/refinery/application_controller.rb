@@ -1,3 +1,5 @@
+require 'action_controller'
+
 class Refinery::ApplicationController < ActionController::Base
 
   helper_method :home_page?,
@@ -12,12 +14,11 @@ class Refinery::ApplicationController < ActionController::Base
   include Crud # basic create, read, update and delete methods
   include AuthenticatedSystem
 
-  before_filter :find_or_set_locale,
-                :find_pages_for_menu,
+  before_filter :find_pages_for_menu,
                 :show_welcome_page?
 
   after_filter :store_current_location!,
-               :if => Proc.new {|c| c.send(:refinery_user?) }
+               :if => Proc.new {|c| c.send(:refinery_user?) rescue false }
 
   rescue_from ActiveRecord::RecordNotFound,
               ActionController::UnknownAction,
@@ -31,10 +32,14 @@ class Refinery::ApplicationController < ActionController::Base
   def error_404(exception=nil)
     if (@page = Page.where(:menu_match => "^/404$").includes(:parts, :slugs).first).present?
       # render the application's custom 404 page with layout and meta.
-      render :template => "/pages/show", :status => 404, :format => 'html'
+      render :template => "/pages/show",
+             :format => 'html',
+             :status => 404
     else
       # fallback to the default 404.html page.
-      render :file => Rails.root.join("public", "404.html").cleanpath.to_s,
+      file = Rails.root.join('public', '404.html')
+      file = Refinery.root.join('vendor', 'refinerycms', 'core', 'public', '404.html') unless file.exist?
+      render :file => file.cleanpath.to_s,
              :layout => false,
              :status => 404
     end
@@ -62,10 +67,6 @@ class Refinery::ApplicationController < ActionController::Base
 
 protected
 
-  def default_url_options(options={})
-    ::Refinery::I18n.enabled? ? { :locale => I18n.locale } : {}
-  end
-
   # get all the pages to be displayed in the site menu.
   def find_pages_for_menu
     @menu_pages = Page.top_level
@@ -81,19 +82,6 @@ protected
   def render(action = nil, options = {}, &blk)
     present(@page) unless admin? or @meta.present?
     super
-  end
-
-  def find_or_set_locale
-    if ::Refinery::I18n.enabled?
-      if ::Refinery::I18n.has_locale?(locale = params[:locale].try(:to_sym))
-        ::I18n.locale = locale
-      elsif locale.present? and locale != ::Refinery::I18n.default_frontend_locale
-        params[:locale] = I18n.locale = ::Refinery::I18n.default_frontend_locale
-        redirect_to(params, :notice => "The locale '#{locale.to_s}' is not supported.") and return
-      else
-        ::I18n.locale = ::Refinery::I18n.default_frontend_locale
-      end
-    end
   end
 
   def show_welcome_page?

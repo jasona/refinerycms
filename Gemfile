@@ -1,14 +1,15 @@
 source 'http://rubygems.org'
-
-gem 'rails', '3.0.0.rc'
+gem 'bundler',                  '~> 1.0.0'
+gem 'rails',                    '3.0.0'
 
 # Bundle edge Rails instead:
 # gem 'rails', :git => 'git://github.com/rails/rails.git'
 
-gem 'sqlite3-ruby', :require => 'sqlite3'
+gem 'sqlite3-ruby',             :require => 'sqlite3'
 
 # Use unicorn as the web server
 # gem 'unicorn'
+# gem 'mongrel', :group => :development
 
 # Deploy with Capistrano
 # gem 'capistrano'
@@ -31,39 +32,20 @@ gem 'sqlite3-ruby', :require => 'sqlite3'
 
 # REFINERY CMS ================================================================
 
-# Specify the Engines to use:
-path 'vendor/refinerycms' do
-  gem 'refinerycms-core',           :require => 'core'
-  gem 'refinerycms-authentication', :require => 'authentication'
-  gem 'refinerycms-dashboard',      :require => 'dashboard'
-  gem 'refinerycms-inquiries',      :require => 'inquiries'
-  gem 'refinerycms-images',         :require => 'images'
-  gem 'refinerycms-pages',          :require => 'pages'
-  gem 'refinerycms-resources',      :require => 'resources'
-  gem 'refinerycms-settings',       :require => 'settings'
-end
+# Specify the Refinery CMS core:
+gem 'refinerycms',              :path => '.'
 
-# Specify additional Refinery CMS Engines here:
+# Specify additional Refinery CMS Engines here (all optional):
+gem 'refinerycms-inquiries',    '~> 0.9.8.4', :require => 'inquiries'
 # gem 'refinerycms-news',       '~> 0.9.8', :require => 'news'
 # gem 'refinerycms-portfolio',  '~> 0.9.7', :require => 'portfolio'
+# gem 'refinerycms-theming',    '~> 0.9.8', :require => 'theming'
 
-# Add i18n support
-gem 'refinerycms-i18n', :git => 'git://github.com/resolve/refinerycms-i18n.git',
-                        :branch => 'master',
-                        :require => 'refinery/i18n'
-gem 'routing-filter'
-
-# Add acts_as_tree support
-gem 'acts_as_tree',     :git => 'git://github.com/parndt/acts_as_tree.git',
-                        :branch => 'master'
+# Add i18n support (optional, you can remove this if you really want to).
+gem 'refinerycms-i18n',         '~> 0.9.8.3', :require => 'refinery/i18n'
 
 # Specify a version of RMagick that works in your environment:
-gem 'rmagick',          '~> 2.12.0', :require => false
-
-# FIXME: These requirements are listed here temporarily pending a release
-gem 'dragonfly',        :git => 'git://github.com/parndt/dragonfly.git',
-                        :branch => 'refactor_job',
-                        :require => 'dragonfly'
+gem 'rmagick',                  '~> 2.12.0', :require => false
 
 # END REFINERY CMS ============================================================
 
@@ -71,11 +53,11 @@ gem 'dragonfly',        :git => 'git://github.com/parndt/dragonfly.git',
 
 group :test do
   # RSpec
-  gem 'rspec',              (RSPEC_VERSION = '~> 2.0.0.beta.19')
-  gem 'rspec-core',         RSPEC_VERSION, :require => 'rspec/core'
-  gem 'rspec-expectations', RSPEC_VERSION, :require => 'rspec/expectations'
-  gem 'rspec-mocks',        RSPEC_VERSION, :require => 'rspec/mocks'
-  gem 'rspec-rails',        RSPEC_VERSION
+  gem 'rspec',                  (RSPEC_VERSION = '~> 2.0.0.beta')
+  gem 'rspec-core',             RSPEC_VERSION, :require => 'rspec/core'
+  gem 'rspec-expectations',     RSPEC_VERSION, :require => 'rspec/expectations'
+  gem 'rspec-mocks',            RSPEC_VERSION, :require => 'rspec/mocks'
+  gem 'rspec-rails',            RSPEC_VERSION
   # Cucumber
   gem 'capybara'
   gem 'database_cleaner'
@@ -84,8 +66,10 @@ group :test do
   gem 'spork' unless RUBY_PLATFORM =~ /mswin|mingw/
   gem 'launchy'
   gem 'gherkin'
+  # TODO: Change back to gem when patch is merged in
+  gem 'rack-test',              :git => 'git://github.com/alan/rack-test.git'
   # FIXME: JSON constant constants warnings
-  gem 'json_pure',          '= 1.4.6', :require => 'json/pure'
+  gem 'json_pure',              '~> 1.4.6', :require => 'json/pure'
   # Factory Girl
   gem 'factory_girl'
   gem 'ruby-prof'
