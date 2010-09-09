@@ -53,9 +53,6 @@ init_interface = function() {
     }
   });
 
-  // focus first field in an admin form.
-  $('form input[type=text]:first').focus();
-
   // ensure that the menu isn't wider than the page_container or else it looks silly to round that corner.
   if (($menu = $('#menu')).length > 0) {
     $menu.jcarousel({
@@ -344,9 +341,6 @@ var link_dialog = {
       if((resource_selected = $('#existing_resource_area_content ul li.linked a')).length > 0) {
         resourceUrl = parseURL(resource_selected.attr('href'));
         relevant_href = resourceUrl.pathname;
-        if (resourceUrl.protocol == "" && resourceUrl.hostname == "assets") {
-          relevant_href = "/assets" + relevant_href;
-        }
 
         // Add any alternate resource stores that need a absolute URL in the regex below
         if(resourceUrl.hostname.match(/s3.amazonaws.com/)) {
@@ -805,26 +799,34 @@ var image_dialog = {
       var imageThumbnailSize = $('#existing_image_size_area li.selected a').attr('data-size');
       var resize = $("#wants_to_resize_image").is(':checked');
 
+      var url = '/refinery/images/'+imageId+'/url';
       if (resize) {
-        var url = '/refinery/images/'+imageId+'/url?size='+imageThumbnailSize;
-      } else {
-        var url = '/refinery/images/'+imageId+'/url'
+        url += '?size='+imageThumbnailSize;
       }
 
       var data;
-      $.ajax({ async: false,
-               url: url,
-               success: function (result, status, xhr) {
-                 if (result.error) {
-                   alert("Something went wrong with the image insertion!");
-                 } else {
-                   data = result;
-                 }
-               },
-               error: function(xhr, txt, status) {
-                 alert("Something went wrong with the image insertion!");
-               }
-             });
+      $.ajax({
+        async: false,
+        url: url,
+        success: function (result, status, xhr) {
+          if (result.error) {
+            if (console && console.log) {
+               console.log("Something went wrong with the image insertion!");
+               console.log(result);
+             }
+           } else {
+             data = result;
+           }
+         },
+         error: function(xhr, txt, status) {
+           if (console && console.log) {
+             console.log("Something went wrong with the image insertion!");
+             console.log(xhr);
+             console.log(txt);
+             console.log(status);
+           }
+         }
+       });
 
       if (parent) {
         if ((wym_src = parent.document.getElementById('wym_src')) != null) {
@@ -837,7 +839,7 @@ var image_dialog = {
           wym_alt.value = $(img).attr('alt');
         }
         if ((wym_size = parent.document.getElementById('wym_size')) != null) {
-          wym_size.value = imageThumbnailSize;
+          wym_size.value = imageThumbnailSize.replace(/[<>=]/g, '');
         }
       }
     }
@@ -888,56 +890,50 @@ var list_reorder = {
   init: function() {
     $('#reorder_action').click(list_reorder.enable_reordering);
     $('#reorder_action_done').click(list_reorder.disable_reordering);
+    list_reorder.sortable_list.nestedSortable({   
+      disableNesting: 'no-nest',
+      forcePlaceholderSize: true,
+      handle: 'div',
+      items: 'li',
+      opacity: .6,
+      placeholder: 'placeholder',
+      tabSize: 25,
+      tolerance: 'pointer',
+      toleranceElement: '> div',
+      disabled: true,
+      start: function () {
+      },
+      change: function () {
+        list_reorder.reset_branch_classes(this);  
+      },
+      stop: function () {
+        list_reorder.reset_branch_classes(this);  
+      }
+    });
+    list_reorder.reset_branch_classes(list_reorder.sortable_list);
   }
 
-  , enable_reordering: function(e) {
+  ,reset_branch_classes: function (ul) {
+    $("li.ui-sortable-helper", this).removeClass("record").removeClass("branch_start").removeClass("branch_end");
+    $("li", ul).removeClass("branch_start").removeClass("branch_end");
+
+    $("> li:first", ul).addClass("branch_start")
+    $("> li:last", ul).addClass("branch_end")
+
+    var nested_ul = $("ul", ul);
+    $("> li:last", nested_ul).addClass("branch_end");
+  }
+
+  ,enable_reordering: function(e) {
     if(e) { e.preventDefault(); }
+    $('#sortable_list').addClass("reordering");
 
-    sortable_options = {
-      'tolerance': 'pointer'
-      , 'placeholder': 'placeholder'
-      , 'cursor': 'drag'
-      , 'items': 'li'
-      , 'axis': 'y'
-      , 'connectWith' : '.nested'
-    };
-
-    $(list_reorder.sortable_list).find('li').each(function(index, li) {
-      if ($('ul', li).length) { return; }
-      $("<ul></ul>").appendTo(li);
-    });
-
-    if (list_reorder.tree && !$.browser.msie) {
-      $(list_reorder.sortable_list).parent().nestedSortable($.extend(sortable_options, {
-        'maxDepth': 2
-        , 'placeholderElement': 'li'
-      }));
-      $(list_reorder.sortable_list).addClass('ui-sortable');
-    } else {
-      $(list_reorder.sortable_list).sortable(sortable_options);
-    }
-
-    $('#site_bar, header > *:not(script)').fadeTo(500, 0.3);
+    $('#sortable_list .actions, #site_bar, header > *:not(script)').fadeTo(500, 0.3);
     $('#actions *:not("#reorder_action_done, #reorder_action")').not($('#reorder_action_done').parents('li, ul')).fadeTo(500, 0.55);
 
+    list_reorder.sortable_list.nestedSortable("enable");
     $('#reorder_action').hide();
     $('#reorder_action_done').show();
-  }
-
-  , parse_branch: function(indexes, li) {
-    branch = "&sortable_list";
-    $.each(indexes, function(i, index) {
-      branch += "[" + index + "]";
-    });
-    branch += "[id]=" + $($(li).attr('id').split('_')).last().get(0);
-
-    // parse any children branches too.
-    $(li).find('> li[id], > ul li[id]').each(function(i, child) {
-      current_indexes = $.merge($.merge([], indexes), [i]);
-      branch += list_reorder.parse_branch(current_indexes, child);
-    });
-
-    return branch;
   }
 
   , disable_reordering: function(e) {
@@ -946,43 +942,17 @@ var list_reorder = {
     }
     if(e) { e.preventDefault(); }
     $('#reorder_action_done').addClass('loading');
+    list_reorder.sortable_list.nestedSortable("disable");
+
+    $('#sortable_list').removeClass("reordering");
+
     if (list_reorder.update_url != null) {
-      serialized = "";
-      list_reorder.sortable_list.find('> li[id]').each(function(index, li) {
-        if (list_reorder.tree) {
-          serialized += list_reorder.parse_branch([index], li);
-        }
-        else {
-          serialized += "&sortable_list[]=" + $($(li).attr('id').split('_')).last().get(0);
-        }
-      });
-      serialized += "&tree=" + list_reorder.tree;
-      serialized += "&authenticity_token=" + encodeURIComponent($('#reorder_authenticity_token').val());
-      serialized += "&continue_reordering=false";
+
+      var serialized = list_reorder.sortable_list.serializelist();
 
       $.post(list_reorder.update_url, serialized, function(data) {
-        // handle the case where we get the whole list back including the <ul> or whatever.
-        if ((matches = data.match(new RegExp("^<" + list_reorder.sortable_list.get(0).tagName.toLowerCase()
-                                             + "[^>]+" + list_reorder.sortable_list.attr('id') + "[^>]>"))) != null)
-        {
-          // replace reorder authenticity token's value.
-          $('#reorder_authenticity_token').val(
-            $($(data.split('reorder_authenticity_token')).last().get(0).split('value=\''))
-              .last().get(0).split('\'')[0]);
-          // replace actual list content.
-          $(list_reorder.sortable_list).html($(data).html());
-        } else {
-          $(list_reorder.sortable_list).html(data);
-        }
-
-        // if we get passed a script tag, re-enable reordering.
-        matches = data.replace('"', "'")
-                      .match(/<script\ type='text\/javascript'>([^<]*)<\/script>/im);
-        if (matches != null && matches.length > 1) {
-          list_reorder.enable_reordering();
-        } else {
-          list_reorder.restore_controls(e);
-        }
+        alert("Pages have been reordered.");
+        list_reorder.restore_controls(e);
       });
     } else {
       list_reorder.restore_controls(e);
@@ -997,7 +967,7 @@ var list_reorder = {
     }
     $(list_reorder.sortable_list).removeClass('reordering, ui-sortable');
 
-    $('#site_bar, header > *:not(script)').fadeTo(250, 1);
+    $('#sortable_list .actions, #site_bar, header > *:not(script)').fadeTo(250, 1);
     $('#actions *:not("#reorder_action_done, #reorder_action")').not($('#reorder_action_done').parents('li, ul')).fadeTo(250, 1, function() {
       $('#reorder_action_done').hide().removeClass('loading');
       $('#reorder_action').show();
@@ -1044,7 +1014,28 @@ var image_picker = {
   , changed: function(image) {
     $(this.options.field).val(image.id.replace("image_", ""));
 
-    image.src = image.src.replace('_dialog_thumb', '_' + this.options.thumbnail).replace(/\?\d*/, '');
+    $.ajax({
+      async: false,
+      url: '/refinery/images/'+$(image).attr('data-id')+'/url?size='+this.options.thumbnail,
+      success: function (result, status, xhr) {
+        if (result.error) {
+          if (console && console.log) {
+             console.log("Something went wrong with the image insertion!");
+             console.log(result);
+           }
+         } else {
+           image.src = result.url;
+         }
+       },
+       error: function(xhr, txt, status) {
+         if (console && console.log) {
+           console.log("Something went wrong with the image insertion!");
+           console.log(xhr);
+           console.log(txt);
+           console.log(status);
+         }
+       }
+    });
 
     current_image = $(this.options.image_display);
     current_image.replaceWith($("<img src='"+image.src+"?"+Math.floor(Math.random() * 1000000000)+"' id='"+current_image.attr('id')+"' class='brown_border' />"));
@@ -1100,7 +1091,9 @@ parseURL = function(url)
 
   //splice and join the remainder to get the pathname
   parts.splice(0, 2);
-  loc.pathname = '/' + parts.join('/');
+  // ensure we don't destroy absolute urls like /system/images/whatever.jpg
+  loc.pathname = (loc.href[0] == '/' ? ("/" + loc.host) : '');
+  loc.pathname += '/' + parts.join('/');
 
   //extract any hash and remove from the pathname
   loc.pathname = loc.pathname.split('#');

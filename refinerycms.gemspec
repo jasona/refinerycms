@@ -4,7 +4,7 @@ Gem::Specification.new do |s|
   s.name              = %q{refinerycms}
   s.version           = %q{0.9.8}
   s.description       = %q{A Ruby on Rails CMS that supports Rails 3. It's easy to extend and sticks to 'the Rails way' where possible.}
-  s.date              = %q{2010-08-31}
+  s.date              = %q{2010-09-06}
   s.summary           = %q{A Ruby on Rails CMS that supports Rails 3}
   s.email             = %q{info@refinerycms.com}
   s.homepage          = %q{http://refinerycms.com}
@@ -17,7 +17,8 @@ Gem::Specification.new do |s|
   s.add_dependency    'bundler',              '~> 1.0.0'
   s.add_dependency    'childlabor',           '~> 0.0.2'
 
-  s.add_dependency    'parndt-acts_as_tree',  '~> 1.2.5'
+  s.add_dependency    'moretea-awesome_nested_set', '= 1.4.3.1'
+
   s.add_dependency    'acts_as_indexed',      '~> 0.6.5'
   s.add_dependency    'friendly_id',          '~> 3.1.3'
   s.add_dependency    'truncate_html',        '= 0.4'
@@ -40,6 +41,7 @@ Gem::Specification.new do |s|
     'app/models',
     'app/views',
     'bin/refinerycms',
+    'changelog.md',
     'config/database.yml.mysql',
     'config/database.yml.postgresql',
     'config/database.yml.sqlite3',
@@ -86,12 +88,17 @@ Gem::Specification.new do |s|
     'db/migrate/20100708014636_ensure_user_plugins_use_name_and_not_title.rb',
     'db/migrate/20100729221735_remove_page_translations_if_present.rb',
     'db/migrate/20100826232810_move_inquiry_settings_to_refinery_settings.rb',
+    'db/migrate/20100831122919_move_page_to_nested_set.rb',
     'db/schema.rb',
     'db/seeds',
     'db/seeds.rb',
     'db/seeds/inquiry_settings.rb',
     'db/seeds/pages.rb',
     'db/seeds/refinery_settings.rb',
+    'db/test.sqlite3-journal',
+    'license.md',
+    'readme.md',
+    'todo.md',
     'vendor/refinerycms',
     'vendor/refinerycms/authentication',
     'vendor/refinerycms/authentication/app',
@@ -264,8 +271,16 @@ Gem::Specification.new do |s|
     'vendor/refinerycms/core/lib/refinery/attachment_fu_patch.rb',
     'vendor/refinerycms/core/lib/refinery/base_presenter.rb',
     'vendor/refinerycms/core/lib/refinery/catch_all_routes.rb',
-    'vendor/refinerycms/core/lib/refinery/form_helpers.rb',
-    'vendor/refinerycms/core/lib/refinery/html_truncation_helper.rb',
+    'vendor/refinerycms/core/lib/refinery/helpers',
+    'vendor/refinerycms/core/lib/refinery/helpers/form_helper.rb',
+    'vendor/refinerycms/core/lib/refinery/helpers/html_truncation_helper.rb',
+    'vendor/refinerycms/core/lib/refinery/helpers/image_helper.rb',
+    'vendor/refinerycms/core/lib/refinery/helpers/menu_helper.rb',
+    'vendor/refinerycms/core/lib/refinery/helpers/meta_helper.rb',
+    'vendor/refinerycms/core/lib/refinery/helpers/script_helper.rb',
+    'vendor/refinerycms/core/lib/refinery/helpers/site_bar_helper.rb',
+    'vendor/refinerycms/core/lib/refinery/helpers/tag_helper.rb',
+    'vendor/refinerycms/core/lib/refinery/helpers/translation_helper.rb',
     'vendor/refinerycms/core/lib/refinery/link_renderer.rb',
     'vendor/refinerycms/core/lib/refinery/plugin.rb',
     'vendor/refinerycms/core/lib/refinery/plugins.rb',

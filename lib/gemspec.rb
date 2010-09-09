@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 require File.expand_path('../../vendor/refinerycms/refinery.rb', __FILE__)
-files = %w( .gitignore .yardopts Gemfile ).map { |file| Dir[file] }.flatten
+files = %w( .gitignore .yardopts Gemfile *.md ).map { |file| Dir[file] }.flatten
 %w(app bin config db features lib public script test themes vendor).sort.each do |dir|
   files += Dir.glob("#{dir}/**/*")
 end
@@ -46,7 +46,8 @@ Gem::Specification.new do |s|
   s.add_dependency    'bundler',              '~> 1.0.0'
   s.add_dependency    'childlabor',           '~> 0.0.2'
 
-  s.add_dependency    'parndt-acts_as_tree',  '~> 1.2.5'
+  s.add_dependency    'moretea-awesome_nested_set', '= 1.4.3.1'
+
   s.add_dependency    'acts_as_indexed',      '~> 0.6.5'
   s.add_dependency    'friendly_id',          '~> 3.1.3'
   s.add_dependency    'truncate_html',        '= 0.4'
