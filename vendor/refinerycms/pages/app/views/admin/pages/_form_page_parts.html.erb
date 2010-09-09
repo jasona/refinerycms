@@ -21,7 +21,7 @@
   <% @page.parts.each_with_index do |part, part_index| %>
     <li class='ui-state-default<%= ' ui-state-active' if part_index == 0 %>'>
       <% if change_layout %>
-        <%= link_to t("page_layouts.#{@page.try(:layout).name}.#{part.name}", :default => part.name.titleize), "##{@page.new_record? ? "page_part_new_#{part_index}" : part.to_param}" %>
+        <%= link_to t("page_layouts.#{@page.try(:layout).try(:name)}.#{part.name}", :default => part.name.titleize), "##{@page.new_record? ? "page_part_new_#{part_index}" : part.to_param}" %>
       <% else %>
         <%= link_to part.name.titleize, "##{@page.new_record? ? "page_part_new_#{part_index}" : part.to_param}" %>
       <% end %>
