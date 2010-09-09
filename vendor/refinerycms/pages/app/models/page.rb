@@ -1,8 +1,7 @@
 class Page < ActiveRecord::Base
   validates :title, :presence => true
 
-  acts_as_tree :order => "position ASC",
-               :include => [:children, :slugs]
+  acts_as_nested_set
 
   # Docs for friendly_id http://github.com/norman/friendly_id
   has_friendly_id :title, :use_slug => true,
@@ -119,15 +118,20 @@ class Page < ActiveRecord::Base
   # to "/contact"
   def url
     if self.link_url.present?
-      if self.link_url =~ /^\// and ::Refinery::I18n.enabled?
-        "/#{::I18n.locale}#{self.link_url}"
-      else
-        self.link_url
-      end
+      link_url_localised?
     elsif use_marketable_urls?
       url_marketable
     elsif self.to_param.present?
       url_normal
+    end
+  end
+
+  def link_url_localised?
+    if self.link_url =~ /^\// and defined?(::Refinery::I18n) and ::Refinery::I18n.enabled? and
+       ::I18n.locale != ::Refinery::I18n.default_frontend_locale
+      "/#{::I18n.locale}#{self.link_url}"
+    else
+      self.link_url
     end
   end
 
@@ -205,8 +209,8 @@ class Page < ActiveRecord::Base
     end
 
     # Returns all the top level pages, usually to render the top level navigation.
-    def top_level(include_children = false)
-      where(:show_in_menu => true, :draft => false).order('position ASC').includes(:slugs, :children, :parent, :parts)
+    def top_level
+      self.roots.where(:show_in_menu => true, :draft => false)
     end
   end
 

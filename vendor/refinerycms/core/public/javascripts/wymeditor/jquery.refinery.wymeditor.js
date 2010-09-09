@@ -1258,10 +1258,22 @@ WYMeditor.editor.prototype.dialog = function( dialogType ) {
 
   if ((parent_node != null) && (parent_node.tagName.toLowerCase() != WYMeditor.A))
   {
-    // wrap the current selection with a funky span (not required for webkit)
-    if (this._selected_image == null && !$.browser.webkit)
+    // wrap the current selection with a funky span.
+    if (this._selected_image == null)
     {
-      this.wrap("<span id='replace_me_with_" + this._current_unique_stamp + "'>", "</span>");
+      if ((selected == null || selected.tagName.toLowerCase() == WYMeditor.P) && wym._iframe.contentWindow.getSelection) {
+        // Fixes webkit issue where it would not paste at cursor.
+        selection = wym._iframe.contentWindow.getSelection();
+        selected_html = $(selected).html();
+
+        new_html = selected_html.substring(0, selection.focusOffset)
+                   + "<span id='replace_me_with_" + this._current_unique_stamp + "'></span>"
+                   + selected_html.substring(selection.focusOffset);
+
+        $(selected).html(new_html);
+      } else {
+        this.wrap("<span id='replace_me_with_" + this._current_unique_stamp + "'>", "</span>");
+      }
     }
   }
   else {
@@ -1443,6 +1455,9 @@ WYMeditor.editor.prototype.insert = function(html) {
 };
 
 WYMeditor.editor.prototype.wrap = function(left, right, selection) {
+  left = (typeof(left) != 'undefined' ? left : '');
+  right = (typeof(right) != 'undefined' ? right : '');
+
   // Do we have a selection?
   if (selection == null) { selection = this._iframe.contentWindow.getSelection();}
   if (selection.focusNode != null) {
@@ -1728,19 +1743,15 @@ WYMeditor.INIT_DIALOG = function(wym, selected, isIframe) {
   $(wym._options.dialogImageSelector).find(wym._options.submitSelector).click(function(e) {
     form = $(this.form);
     if ((url = form.find(wym._options.srcSelector).val()) != null && url.length > 0) {
-      wym._exec(WYMeditor.INSERT_IMAGE, wym._current_unique_stamp, selected);
+      (image = $('<img />'))
+        .attr(WYMeditor.SRC, url)
+        .attr(WYMeditor.TITLE, form.find(wym._options.titleSelector).val())
+        .attr(WYMeditor.ALT, form.find(wym._options.titleSelector).val())
+        .attr(WYMeditor.REL, form.find(wym._options.sizeSelector).val());
 
-      if((image = $(wym._doc.body).find("img[src*=" + wym._current_unique_stamp + "]")).length > 0) {
-        image.attr(WYMeditor.SRC, url)
-              .attr(WYMeditor.TITLE, form.find(wym._options.titleSelector).val())
-              .attr(WYMeditor.ALT, form.find(wym._options.titleSelector).val())
-              .attr(WYMeditor.REL, form.find(wym._options.sizeSelector).val());
-
-        if (!$.browser.webkit && replaceable != null && (this._selected_image == null || (this._selected_image != null && replaceable.parentNode != null)))
-        {
-          replaceable.after(image).remove();
-        }
-      }
+       if (replaceable != null) {
+         replaceable.after(image).remove();
+       }
 
       // fire a click event on the dialogs close button
       wym.close_dialog(e);
@@ -4826,7 +4837,8 @@ WYMeditor.WymClassSafari.prototype.paste = function(sData) {
       sTmp = sTmp.replace(rExp, "<br />");
       if (x == 0 && $(container).html().replace(/<br\ ?\/?>/, "").length == 0) {
         $(container).html(sTmp);
-      } else {
+      }
+      else {
         $(container).after("<p>" + sTmp + "</p>");
       }
     }

@@ -25,7 +25,7 @@ Refinery::Application.configure do
   # config.logger = SyslogLogger.new
 
   # Use a different cache store in production
-  # config.cache_store = :mem_cache_store
+  config.cache_store = :memory_store
 
   # Disable Rails's static asset server (Rails default)
   # In production, Apache or nginx will already do this
@@ -49,26 +49,6 @@ Refinery::Application.configure do
 
   # Send deprecation notices to registered listeners
   config.active_support.deprecation = :notify
-
-  config.after_initialize do
-    # override translate, but only in production
-    ::I18n.module_eval do
-      class << self
-        alias_method :original_rails_i18n_translate, :translate
-        def translate(key, options = {})
-          begin
-            original_rails_i18n_translate(key, options.merge!({:raise => true}))
-          rescue ::I18n::MissingTranslationData => e
-            if self.config.locale != ::Refinery::I18n.default_locale
-              self.translate(key, options.update(:locale => ::Refinery::I18n.default_locale))
-            else
-              raise e
-            end
-          end
-        end
-      end
-    end
-  end
 end
 
 # When true will use Amazon's Simple Storage Service on your production machine

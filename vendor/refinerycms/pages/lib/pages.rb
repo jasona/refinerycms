@@ -4,12 +4,14 @@ module Refinery
   module Pages
     class Engine < Rails::Engine
 
+      # Register cache sweeper, ensuring that we don't overwrite any other observers.
+      config.autoload_paths += %W(#{config.root}/app/sweepers)
+      (config.active_record.observers ||= []) << :page_sweeper
+
       config.after_initialize do
         Refinery::Plugin.register do |plugin|
-          plugin.title = "Pages"
           plugin.name = "refinery_pages"
           plugin.directory = "pages"
-          plugin.description = "Manage content pages"
           plugin.version = %q{0.9.8}
           plugin.menu_match = /(refinery|admin)\/page(_part)?s(_dialogs)?$/
           plugin.activity = {

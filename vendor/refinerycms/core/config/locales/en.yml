@@ -1,4 +1,11 @@
 en:
+  plugins:
+    refinery_core:
+      title: Refinery
+      description: Core refinery plugin
+    refinery_dialogs:
+      title: Dialogs
+      description: Refinery dialogs plugin
   welcome:
     there_are_no_users: There are no users yet, so we'll set you up first.
     remember_admin_location: "Remember your Refinery admin area is at:"
@@ -42,6 +49,10 @@ en:
         download_current: Download current %{what}
         opens_in_new_window: Opens in a new window
         remove_current: "Remove current %{what}"
+        no_resource_selected: There is currently no %{what} selected, click here to add one.
+        name: Add %{what}
+        current: Current %{what}
+        resource: resource
       search:
         button_text: Search
         results_for: Search results for '%{query}'
