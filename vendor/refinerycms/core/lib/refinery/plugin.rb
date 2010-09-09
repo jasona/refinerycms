@@ -10,7 +10,7 @@ module Refinery
 
       if defined?(Page) && (reserved_word = plugin.controller.nil? ? plugin.name : plugin.controller)
         # Prevent page slugs from being this plugin's controller name
-        Page.friendly_id_config.reserved_words << reserved_word
+# Page.friendly_id_config.reserved_words << reserved_word
       end
 
       raise "A plugin MUST have a name!: #{plugin.inspect}" if plugin.name.nil?

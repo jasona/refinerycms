@@ -108,6 +108,7 @@ GEM
     mime-types (1.16)
     moretea-awesome_nested_set (1.4.3.1)
       activerecord (~> 3.0.0)
+    mysql (2.8.1)
     nokogiri (1.4.3.1)
     polyglot (0.3.1)
     rack (1.2.1)
@@ -180,6 +181,7 @@ DEPENDENCIES
   gherkin
   json_pure (~> 1.4.6)
   launchy
+  mysql
   rack-test!
   rails (= 3.0.0)
   refinerycms!

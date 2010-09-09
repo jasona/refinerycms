@@ -1,11 +1,14 @@
 class Page < ActiveRecord::Base
-  validates :title, :presence => true
 
   acts_as_nested_set
 
   # Docs for friendly_id http://github.com/norman/friendly_id
-  has_friendly_id :title, :use_slug => true,
-                  :reserved_words => %w(index new session login logout users refinery admin images wymiframe)
+#  has_friendly_id :title, :use_slug => true,
+#                  :reserved_words => %w(index new session login logout users refinery admin images wymiframe)
+
+  validate do
+    p translations.inspect
+  end
 
   has_many :translations, :class_name => "::PageTranslation" do
     def default
@@ -28,7 +31,11 @@ class Page < ActiveRecord::Base
   end
 
   def add_translation locale
-    
+  end
+
+
+  def has_current_translation?
+    translations.current != nil
   end
 
 
@@ -257,9 +264,9 @@ class Page < ActiveRecord::Base
   # Returns the sluggified string
   def normalize_friendly_id(slug_string)
     sluggified = super
-    if use_marketable_urls? && self.class.friendly_id_config.reserved_words.include?(sluggified)
-      sluggified += "-page"
-    end
+#    if use_marketable_urls? && self.class.friendly_id_config.reserved_words.include?(sluggified)
+#      sluggified += "-page"
+#    end
     sluggified
   end
 
