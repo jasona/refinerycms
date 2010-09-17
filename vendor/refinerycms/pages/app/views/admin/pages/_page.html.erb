@@ -5,7 +5,7 @@
     "branch_end"
   end
 
-  title = page.title
+  title = page.title || page.translations.find_by_locale(I18n.default_locale).title
   title << " <em>(#{t('.hidden')})</em>" unless page.show_in_menu?
   title << " <em>(#{t('.draft')})</em>" if page.draft?
 -%>

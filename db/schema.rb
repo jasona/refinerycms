@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20100831122919) do
+ActiveRecord::Schema.define(:version => 20100913143742) do
 
   create_table "images", :force => true do |t|
     t.string   "image_mime_type"
@@ -44,6 +44,16 @@ ActiveRecord::Schema.define(:version => 20100831122919) do
     t.datetime "updated_at"
   end
 
+  create_table "page_part_translations", :force => true do |t|
+    t.integer  "page_part_id"
+    t.string   "locale"
+    t.string   "body"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "page_part_translations", ["page_part_id"], :name => "index_page_part_translations_on_page_part_id"
+
   create_table "page_parts", :force => true do |t|
     t.integer  "page_id"
     t.string   "title"
@@ -55,6 +65,19 @@ ActiveRecord::Schema.define(:version => 20100831122919) do
 
   add_index "page_parts", ["id"], :name => "index_page_parts_on_id"
   add_index "page_parts", ["page_id"], :name => "index_page_parts_on_page_id"
+
+  create_table "page_translations", :force => true do |t|
+    t.integer  "page_id"
+    t.string   "locale"
+    t.text     "meta_description"
+    t.string   "browser_title"
+    t.string   "meta_keywords"
+    t.string   "title"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "page_translations", ["page_id"], :name => "index_page_translations_on_page_id"
 
   create_table "pages", :force => true do |t|
     t.string   "title"
