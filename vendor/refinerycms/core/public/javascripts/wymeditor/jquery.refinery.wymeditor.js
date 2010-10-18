@@ -1212,6 +1212,7 @@ WYMeditor.editor.prototype.update = function() {
  * @description Opens a dialog box
  */
 WYMeditor.editor.prototype.dialog = function( dialogType ) {
+  this.update();
   var path = this._wym._options.dialogPath + dialogType;
 
   this._current_unique_stamp = this.uniqueStamp();
@@ -1261,16 +1262,44 @@ WYMeditor.editor.prototype.dialog = function( dialogType ) {
     // wrap the current selection with a funky span.
     if (this._selected_image == null)
     {
-      if ((selected == null || selected.tagName.toLowerCase() == WYMeditor.P) && wym._iframe.contentWindow.getSelection) {
+      if (selected != null && selected.tagName.toLowerCase() != WYMeditor.A && wym._iframe.contentWindow.getSelection) {
         // Fixes webkit issue where it would not paste at cursor.
         selection = wym._iframe.contentWindow.getSelection();
-        selected_html = $(selected).html();
+        selected_html = $(selected).html().replace('&nbsp;', ' ');
 
-        new_html = selected_html.substring(0, selection.focusOffset)
-                   + "<span id='replace_me_with_" + this._current_unique_stamp + "'></span>"
-                   + selected_html.substring(selection.focusOffset);
+        if ((offset = selected_html.indexOf(selection.focusNode.textContent)) == -1) {
+          offset = 0;
+        }
+        focus = offset + selection.focusOffset;
+        anchor = offset + selection.anchorOffset;
+        start = (focus < anchor) ? focus : anchor;
+        end = (focus < anchor) ? anchor : focus;
+        length = (end - start);
 
-        $(selected).html(new_html);
+        focusNode = selection.focusNode.tagName === undefined ? selection.focusNode.parentNode : selection.focusNode;
+        if (!($.browser.mozilla && $(focusNode).attr('_moz_dirty') !== undefined)) {
+          if (length > 0) {
+            new_html = selected_html.substring(0, start)
+                       + "<span id='replace_me_with_" + this._current_unique_stamp + "'>"
+                       + selected_html.substring(start, end)
+                       + "</span>"
+                       + selected_html.substring(end);
+          } else {
+            new_html = selected_html.substring(0, start)
+                     + "<span id='replace_me_with_" + this._current_unique_stamp + "'></span>"
+                     + selected_html.substring(end);
+          }
+        } else {
+          // Mozilla Firefox seems to throw its toys out of the cot if the paragraph is _moz_dirty
+          // and we try to get a selection of the entire text contents of the paragraph.
+          // Firefox has to use this.wrap() for this specific condition.
+          this.wrap("<span id='replace_me_with_" + this._current_unique_stamp + "'>", "</span>");
+        }
+
+        if (typeof(new_html) != 'undefined' && new_html != null) {
+          new_html = new_html.replace('  ', '&nbsp;');
+          $(selected).html(new_html);
+        }
       } else {
         this.wrap("<span id='replace_me_with_" + this._current_unique_stamp + "'>", "</span>");
       }
@@ -1665,7 +1694,7 @@ WYMeditor.INIT_DIALOG = function(wym, selected, isIframe) {
   // focus first textarea or input type text element
   dialog.find('input[type=text], textarea').first().focus();
 
-  dialog.find(".close_dialog").click(function(e){
+  doc.find('body').addClass('wym_iframe_body').find('#cancel_button').add(dialog.find('.close_dialog')).click(function(e){
     wym.close_dialog(e, true);
   });
 
@@ -1802,8 +1831,9 @@ WYMeditor.editor.prototype.close_dialog = function(e, cancelled) {
     if ((span = $(this._doc.body).find('span#replace_me_with_' + this._current_unique_stamp)).length > 0) {
       span.parent().html(span.parent().html().replace(new RegExp(["<span(.+?)", span.attr('id'), "(.+?)<\/span>"].join("")), span.html()));
     }
-    (remove_id = $(this._doc.body).find('#replace_me_with_' + this._current_unique_stamp)).attr('id', (remove_id.attr('_id_before_replaceable') || ""));
-
+    (remove_id = $(this._doc.body).find('#replace_me_with_' + this._current_unique_stamp))
+      .attr('id', (remove_id.attr('_id_before_replaceable') || ""))
+      .replaceWith(remove_id.html());
     if (this._undo_on_cancel == true) {
       this._exec("undo");
     }

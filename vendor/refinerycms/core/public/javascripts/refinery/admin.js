@@ -78,6 +78,16 @@ init_interface = function() {
     $('#other_locales').animate({opacity: 'toggle', height: 'toggle'}, 250);
     e.preventDefault();
   });
+
+  $('#existing_image img').load(function(){
+    $('form.edit_image .form-actions').css({
+      'margin-top': ($('#existing_image').height() - $('form.edit_image').height() + 8)
+    });
+  });
+
+  $('.form-actions .form-actions-left input:submit#submit_button').click(function(e) {
+    $("<img src='/images/refinery/icons/ajax-loader.gif' width='16' height='16' class='save-loader' />").appendTo($(this).parent());
+  });
 }
 
 init_modal_dialogs = function(){
@@ -307,20 +317,87 @@ init_tooltips = function(args){
       $(element).attr('tooltip', $(element).attr('title'));
     }
     // wipe clean the title on any children too.
-    $(element).add($(element).children('img')).attr('title', null);
+    $(element).add($(element).children('img')).removeAttr('title');
   });
 }
 
+var link_tester = {
+  initialised: false
+  , init: function(test_url, test_email) {
+    this.test_url    = test_url;
+    this.test_email  = test_email;
+    this.initialised = true;
+  },
+
+  email: function(value, callback) {
+    $.getJSON(link_tester.test_email, {email: value}, function(data){
+      callback(data.result == 'success');
+    });
+  },
+
+  url: function(value, callback) {
+    $.getJSON(link_tester.test_url, {url: value}, function(data){
+      callback(data.result == 'success');
+    });
+  },
+
+  validate_textbox: function(validation_method, textbox_id, callback) {
+    var icon = '';
+    var loader_img  = $("<img id='" + textbox_id.replace('#','') + "_test_loader' src='/images/refinery/ajax-loader.gif' alt='Testing...' style='display: none;'/>");
+    var result_span = $("<span id='" + textbox_id.replace('#','') + "_test_result'></span>");
+
+    loader_img.insertAfter($(textbox_id));
+    result_span.insertAfter(loader_img);
+
+    $(textbox_id).bind('paste keypress',function(){
+      $(textbox_id).stop(true); // Clear the current queue; if we weren't checking yet, cancel it.
+      $(textbox_id + '_test_loader').hide();
+      $(textbox_id + '_test_result').hide();
+      $(textbox_id + '_test_result').removeClass('success_icon').removeClass('failure_icon');
+
+      // Wait one second before checking.
+      $(textbox_id).delay(1000).queue(function () {
+        $(textbox_id + '_test_loader').show();
+        $(textbox_id + '_test_result').hide();
+        $(textbox_id + '_test_result').removeClass('success_icon').removeClass('failure_icon');
+
+        validation_method(this.value, function (success) {
+          if (success) {
+            icon = 'success_icon';
+          }else{
+            icon = 'failure_icon';
+          }
+          $(textbox_id + '_test_result').addClass(icon).show();
+          $(textbox_id + '_test_loader').hide();
+        });
+
+        if (callback) callback($(textbox_id));
+
+        $(this).dequeue();
+      }); // queue
+    }); // bind
+  },
+
+  validate_url_textbox: function(textbox_id, callback) {
+    link_tester.validate_textbox(link_tester.url, textbox_id, callback);
+  },
+
+  validate_email_textbox: function(textbox_id, callback) {
+    link_tester.validate_textbox(link_tester.email, textbox_id, callback);
+  }
+
+};
+
 var link_dialog = {
-  init: function(test_url, test_email){
-    this.test_url = test_url;
-    this.test_email = test_email;
+  initialised: false
+  , init: function(){
     this.init_tabs();
     this.init_resources_submit();
     this.init_close();
     this.page_tab();
     this.web_tab();
     this.email_tab();
+    this.initialised = true;
   },
 
   init_tabs: function(){
@@ -398,35 +475,16 @@ var link_dialog = {
   },
 
   web_tab: function(){
-    $('#web_address_text').bind('paste change',function(){
-      var prefix = '#web_address_',
-          icon = '';
-
-      $(prefix + 'test_loader').show();
-      $(prefix + 'test_result').hide();
-      $(prefix + 'test_result').removeClass('success_icon').removeClass('failure_icon');
-
-      $.getJSON(link_dialog.test_url, {url: this.value}, function(data){
-        if(data.result == 'success'){
-          icon = 'success_icon';
-        }else{
-          icon = 'failure_icon';
-        }
-
-        $(prefix + 'test_result').addClass(icon).show();
-        $(prefix + 'test_loader').hide();
-      });
-
-      link_dialog.update_parent( $(prefix + 'text').val(),
-                                 $(prefix + 'text').val(),
-                                 ($(prefix + 'target_blank').checked ? "_blank" : "")
+    link_tester.validate_url_textbox("#web_address_text",  function() {
+      link_dialog.update_parent( $('#web_address_text').val(),
+                                 $('#web_address_text').val(),
+                                 ($('#web_address_target_blank').checked ? "_blank" : "")
                                );
-    });
+     });
 
     $('#web_address_target_blank').click(function(){
       parent.document.getElementById('wym_target').value = this.checked ? "_blank" : "";
     });
-
   },
 
   email_tab: function() {
@@ -441,13 +499,13 @@ var link_dialog = {
       $('#email_address_test_result').hide();
       $('#email_address_test_result').removeClass('success_icon').removeClass('failure_icon');
 
-      $.getJSON(link_dialog.test_email, {email: mailto}, function(data){
-        if(data.result == 'success'){
+
+      link_tester.email(mailto, function (success) {
+        if (success) {
           icon = 'success_icon';
         }else{
           icon = 'failure_icon';
         }
-
         $('#email_address_test_result').addClass(icon).show();
         $('#email_address_test_loader').hide();
       });
@@ -482,7 +540,8 @@ var link_dialog = {
 }
 
 var page_options = {
-  init: function(enable_parts, new_part_url, del_part_url, change_page_layout, page_layouts, original_page_layout, page_layout_migrate_url){
+  initialised: false
+  ,init: function(enable_parts, new_part_url, del_part_url, change_page_layout, page_layouts, original_page_layout, page_layout_migrate_url){
     // set the page tabs up, but ensure that all tabs are shown so that when wymeditor loads it has a proper height.
     // also disable page overflow so that scrollbars don't appear while the page is loading.
     $(document.body).addClass('hide-overflow');
@@ -532,6 +591,7 @@ var page_options = {
     if(this.enable_parts){
       this.page_part_dialog();
     }
+    this.initialised = true;
   },
 
   show_options: function(){
@@ -751,13 +811,15 @@ var page_options = {
 }
 
 var image_dialog = {
-  callback: null
+  initialised: false
+  , callback: null
 
   , init: function(callback){
     this.callback = callback;
     this.init_tabs();
     this.init_select();
     this.init_actions();
+    this.initialised = true;
     return this;
   }
 
@@ -858,7 +920,7 @@ var image_dialog = {
   , init_actions: function(){
     var _this = this;
     $('#existing_image_area .form-actions-dialog #submit_button').click($.proxy(_this.submit_image_choice, _this));
-    $('.form-actions-dialog #cancel_button').click($.proxy(close_dialog, _this));
+    $('.form-actions-dialog #cancel_button').not('body.wym_iframe_body .form-actions-dialog #cancel_button').click($.proxy(close_dialog, _this));
     $('#existing_image_size_area ul li a').click(function(e) {
       $('#existing_image_size_area ul li').removeClass('selected');
       $(this).parent().addClass('selected');
@@ -887,10 +949,11 @@ var image_dialog = {
 }
 
 var list_reorder = {
-  init: function() {
+  initialised: false
+  , init: function() {
     $('#reorder_action').click(list_reorder.enable_reordering);
     $('#reorder_action_done').click(list_reorder.disable_reordering);
-    list_reorder.sortable_list.nestedSortable({   
+    list_reorder.sortable_list.nestedSortable({
       disableNesting: 'no-nest',
       forcePlaceholderSize: true,
       handle: 'div',
@@ -904,13 +967,14 @@ var list_reorder = {
       start: function () {
       },
       change: function () {
-        list_reorder.reset_branch_classes(this);  
+        list_reorder.reset_branch_classes(this);
       },
       stop: function () {
-        list_reorder.reset_branch_classes(this);  
+        list_reorder.reset_branch_classes(this);
       }
     });
     list_reorder.reset_branch_classes(list_reorder.sortable_list);
+    this.initialised = true;
   }
 
   ,reset_branch_classes: function (ul) {
@@ -951,7 +1015,6 @@ var list_reorder = {
       var serialized = list_reorder.sortable_list.serializelist();
 
       $.post(list_reorder.update_url, serialized, function(data) {
-        alert("Pages have been reordered.");
         list_reorder.restore_controls(e);
       });
     } else {
@@ -976,7 +1039,8 @@ var list_reorder = {
 }
 
 var image_picker = {
-  options: {
+  initialised: false
+  , options: {
     selected: '',
     thumbnail: 'dialog_thumb',
     field: '#image',
@@ -991,6 +1055,7 @@ var image_picker = {
     this.options = $.extend(this.options, new_options);
     $(this.options.remove_image_button).click($.proxy(this.remove_image, this));
     $(this.options.image_toggler).click($.proxy(this.toggle_image, this));
+    this.initialised = true;
   }
 
   , remove_image: function(e) {
@@ -1046,26 +1111,31 @@ var image_picker = {
 }
 
 var resource_picker = {
-  callback: null
+  initialised: false
+  , callback: null
 
   , init: function(callback) {
     this.callback = callback;
+    this.initialised = true;
   }
 }
 
 close_dialog = function(e) {
-  if (parent
-      && parent.document.location.href != document.location.href
-      && $.isFunction(parent.$))
+  if (parent && parent.document.location.href != document.location.href && $.isFunction(parent.$))
   {
-    $(parent.document.body).removeClass('hide-overflow');
-    parent.$('.ui-dialog').dialog('close').remove();
+    the_body = $(parent.document.body)
+    the_dialog = parent.$('.ui-dialog');
   } else {
-    $(document.body).removeClass('hide-overflow');
-    $('.ui-dialog').dialog('close').remove();
+    the_body = $(document.body).removeClass('hide-overflow');
+    the_dialog = $('.ui-dialog').dialog('close').remove();
   }
+  // if there's a wymeditor involved then let it do its thing without blocking first.
+  if (!($(document.body).hasClass('wym_iframe_body'))) {
+    the_body.removeClass('hide-overflow');
+    the_dialog.dialog('close').remove();
 
-  e.preventDefault();
+    e.preventDefault();
+  }
 }
 
 //parse a URL to form an object of properties

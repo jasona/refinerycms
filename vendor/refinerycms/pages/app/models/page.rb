@@ -10,17 +10,22 @@ class Page < ActiveRecord::Base
   has_many :parts,
            :class_name => "PagePart",
            :order => "position ASC",
-           :inverse_of => :page
+           :inverse_of => :page,
+           :dependent => :destroy
 
   accepts_nested_attributes_for :parts,
                                 :allow_destroy => true
 
   # Docs for acts_as_indexed http://github.com/dougal/acts_as_indexed
-  acts_as_indexed :fields => [:title, :meta_keywords, :meta_description, :custom_title, :browser_title, :all_page_part_content]
+  acts_as_indexed :fields => [:title, :meta_keywords, :meta_description,
+                              :custom_title, :browser_title, :all_page_part_content]
 
   before_destroy :deletable?
   after_save :reposition_parts!
   after_save :invalidate_child_cached_url
+
+  scope :live, where(:draft => false)
+  scope :in_menu, where(:show_in_menu => true)
 
   # when a dialog pops up to link to a page, how many pages per page should there be
   PAGES_PER_DIALOG = 14
@@ -73,16 +78,23 @@ class Page < ActiveRecord::Base
     self.destroy
   end
 
-  def indented_title
-    "#{"--" * self.ancestors.size} #{self.title}".chomp
-  end
-
   # Used for the browser title to get the full path to this page
   # It automatically prints out this page title and all of it's parent page titles joined by a PATH_SEPARATOR
-  def path(reverse = true)
+  def path(options = {})
+    # Handle deprecated boolean
+    if [true, false].include?(options)
+      warning = "Page::path does not want a boolean (you gave #{options.inspect}) anymore. "
+      warning << "Please change this to {:reversed => #{options.inspect}}. "
+      warn(warning << "\nCalled from #{caller.first.inspect}")
+      options = {:reversed => options}
+    end
+
+    # Override default options with any supplied.
+    options = {:reversed => true}.merge(options)
+
     unless self.parent.nil?
-      parts = [self.title, self.parent.path(reverse)]
-      parts.reverse! if reverse
+      parts = [self.title, self.parent.path(options)]
+      parts.reverse! if options[:reversed]
       parts.join(PATH_SEPARATOR)
     else
       self.title
@@ -116,7 +128,8 @@ class Page < ActiveRecord::Base
   end
 
   def url_marketable
-    {:controller => "/pages", :action => "show", :path => self.nested_url}
+    # :id => nil is important to prevent any other params[:id] from interfering with this route.
+    {:controller => "/pages", :action => "show", :path => self.nested_url, :id => nil}
   end
 
   def url_normal
@@ -162,9 +175,8 @@ class Page < ActiveRecord::Base
 
   # Return true if this page can be shown in the navigation.
   # If it's a draft or is set to not show in the menu it will return false.
-  # If any of the page's ancestors aren't to be shown in the menu then this page is not either.
   def in_menu?
-    self.live? && self.show_in_menu? && self.ancestors.all? { |a| a.in_menu? }
+    self.live? && self.show_in_menu?
   end
 
   # Returns true if this page is the home page or links to it.
@@ -304,5 +316,12 @@ class Page < ActiveRecord::Base
     children.each do |child|
       Rails.cache.delete(child.url_cache_key)
     end
+  end
+
+  def warn(msg)
+    warning = ["\n*** DEPRECATION WARNING ***"]
+    warning << "#{msg}"
+    warning << ""
+    $stdout.puts warning.join("\n")
   end
 end

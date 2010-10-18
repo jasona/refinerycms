@@ -1,10 +1,11 @@
+require 'rbconfig'
+
 module Refinery
 
+  WINDOWS = !!(RbConfig::CONFIG["host_os"] =~ %r!(msdos|mswin|djgpp|mingw)!)
+
   class << self
-    attr_accessor :is_a_gem, :root, :s3_backend, :base_cache_key
-    def is_a_gem
-      @is_a_gem ||= false
-    end
+    attr_accessor :root, :s3_backend, :base_cache_key, :rescue_not_found
 
     def root
       @root ||= Pathname.new(File.expand_path(__FILE__).split('vendor').first.to_s)
@@ -18,6 +19,10 @@ module Refinery
       @base_cache_key ||= "refinery"
     end
 
+    def rescue_not_found
+      !!@rescue_not_found
+    end
+
     def version
       ::Refinery::Version.to_s
     end
@@ -26,8 +31,8 @@ module Refinery
   class Version
     @major = 0
     @minor = 9
-    @tiny  = 8
-    @build = nil
+    @tiny  = 9
+    @build = 'pre'
 
     class << self
       attr_reader :major, :minor, :tiny, :build

@@ -15,8 +15,6 @@ require 'pathname'
 require 'fileutils'
 require 'optparse'
 
-require 'child_labor' unless RUBY_PLATFORM =~ /mswin3?2?|mingw3?2?/
-
 # Load refinerycms
 require Pathname.new(File.expand_path(File.dirname(__FILE__) << "/..")).join('vendor', 'refinerycms', 'refinery.rb')
 
@@ -54,7 +52,7 @@ module Refinery
           @options[:force] = true
         end
 
-        opts.on("-h [APP_NAME]", "--heroku [APP_NAME]", "Set up and deploy to Heroku") do |app_name|
+        opts.on("--heroku [APP_NAME]", "Set up and deploy to Heroku") do |app_name|
           @options[:heroku] = app_name || ''
         end
 
@@ -120,7 +118,7 @@ module Refinery
 
     def generate!
       # Generate a rails application
-      rails_command = "rails new #{@app_path}"
+      rails_command = "rails new \"#{@app_path}\""
       rails_command << " --database #{@options[:database]}"
       rails_command << " --force" if @options[:force]
       rails_command << " --skip-test-unit --skip-prototype"
@@ -130,12 +128,34 @@ module Refinery
 
     def refine!
       # Overwrite rails defaults with refinery defaults
-      %w(app db).each do |folder|
+      %w(app db features spec).each do |folder|
         FileUtils::cp_r Refinery.root.join(folder), @app_path, :verbose => false
       end
-      %w(.gitignore readme.md config/routes.rb config/settings.rb config/environments/production.rb config/initializers/acts_as_indexed_config.rb
-          config/initializers/field_with_error_fix.rb config/initializers/fix_rack.rb).each do |file|
+
+      # Copy in important files to the Rails app.
+      %w(.gitignore readme.md license.md config/routes.rb config/settings.rb config/cucumber.yml
+         lib/tasks/cucumber.rake lib/tasks/rspec.rake config/initializers/fix_rack.rb
+         config/environments/development.rb config/environments/test.rb config/environments/production.rb
+         config/initializers/acts_as_indexed_config.rb config/initializers/field_with_error_fix.rb).each do |file|
         FileUtils::cp_r Refinery.root.join(file), @app_path.join(file), :verbose => false if Refinery.root.join(file).exist?
+      end
+
+      # Copy javascripts so they're ready to use.
+      %w(admin.js).map{|javascript|
+        Refinery.root.join('vendor', 'refinerycms', 'core', 'public', 'javascripts', javascript)
+      }.each do |javascript|
+        FileUtils::cp javascript.to_s,
+                      @app_path.join('public', 'javascripts').to_s,
+                      :verbose => false if javascript.file?
+      end
+
+      # Copy stylesheets so they're ready to use.
+      %w(application.css formatting.css home.css theme.css).map{|stylesheet|
+        Refinery.root.join('vendor', 'refinerycms', 'core', 'public', 'stylesheets', stylesheet)
+      }.each do |stylesheet|
+        FileUtils::cp stylesheet.to_s,
+                      @app_path.join('public', 'stylesheets').to_s,
+                      :verbose => false if stylesheet.file?
       end
 
       # Remove default application layout, README, and public/index.html
@@ -147,7 +167,7 @@ module Refinery
       gemfile_contents = File.read(Refinery.root.join('Gemfile'))
       refinery_gems = gemfile_contents.match(/# REFINERY CMS =+.*# END REFINERY CMS =+/m)[0]
       File.open(@app_path.join('Gemfile'), "a") do |f|
-        f.write "\n" + refinery_gems + "\n\n# USER DEFINED\n\n" + @options[:gems].join("\n") + "\n\n# END USER DEFINED"
+        f.write "\n" + refinery_gems + "\n\n# USER DEFINED\n" + @options[:gems].join("\n") + "\n# END USER DEFINED"
       end
 
       # Change from development to production
@@ -161,10 +181,12 @@ module Refinery
       # Replace app constant with Refinery
       # TODO: Find a way around this
       camelized_app_name = @app_name.gsub(/\W/, '_').squeeze('_').gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
+      camelized_app_name << "::Application" # We only want to replace occurances like App::Application.
       %w(Rakefile config.ru config/application.rb config/environment.rb
           config/environments/development.rb config/environments/production.rb config/environments/test.rb
           config/initializers/secret_token.rb config/initializers/session_store.rb).each do |hackable|
-        find_and_replace(hackable, camelized_app_name, "Refinery")
+        find_and_replace(hackable, camelized_app_name, 'Refinery::Application')
+        find_and_replace(hackable, "module #{camelized_app_name.split('::').first}", 'module Refinery')
       end
 
       # Remove development specific stuff from the .gitinore file
@@ -182,7 +204,7 @@ module Refinery
       run_command("bundle install")
 
       puts "\n\nSetting up your development database..\n"
-      run_command("rake -f '#{@app_path.join('Rakefile')}' db:setup")
+      run_command("rake -f \"#{@app_path.join('Rakefile')}\" db:setup", {:cd => false})
 
       # Deploy to Heroku
       if @options[:heroku]
@@ -224,32 +246,25 @@ module Refinery
 
     def run_command(command, options = {})
       options = {:cd => true, :puts => true}.merge(options)
-      to_run = ((forkable = RUBY_PLATFORM !~ /mswin3?2?/) ? "" : "cmd /c ")
-      to_run << "cd #{@app_path} && " if options[:cd]
+      to_run = %w()
+      to_run << "cd \"#{@app_path}\" &&" if options[:cd]
       to_run << command
 
-      if forkable
-        if options[:puts]
-          puts "Running: #{to_run}"
-          ::ChildLabor.subprocess(to_run) do |t|
-            while (line = t.gets)
-              puts line
-            end
+      if Refinery::WINDOWS
+        to_run = %w(cmd /c) | to_run.map{|c| c.gsub(/\//m, '\\')}
+      end
+
+      to_run = to_run.join(' ')
+
+      if options[:puts]
+        puts "Running: #{to_run}"
+        IO.popen(to_run) do |t|
+          while (line = t.gets)
+            puts line
           end
-        else
-          ::ChildLabor.subprocess(to_run)
         end
       else
-        if options[:puts]
-          puts "Running: #{to_run}"
-          IO.popen(to_run) do |t|
-            while (line = t.gets)
-              puts line
-            end
-          end
-        else
-          `#{to_run}`
-        end
+        `#{to_run}`
       end
     end
 

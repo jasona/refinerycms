@@ -1,12 +1,12 @@
 module Refinery
   module Helpers
     module MetaHelper
-    
+
       # This is used to display the title of the current object (normally a page) in the browser's titlebar.
       #
       def browser_title(yield_title=nil)
         [
-          yield_title.present? ? yield_title : nil,
+          (yield_title if yield_title.present?),
           @meta.browser_title.present? ? @meta.browser_title : @meta.path,
           RefinerySetting.find_or_set(:site_name, "Company Name")
         ].compact.join(" - ")
@@ -51,7 +51,7 @@ module Refinery
 
         final_title = title.pop
         if (options[:page_title][:wrap_if_not_chained] and title.empty?) and options[:page_title][:tag].present?
-          css = options[:page_title][:class].present? ? " class='#{options[:page_title][:class]}'" : nil
+          css = " class='#{options[:page_title][:class]}'" if options[:page_title][:class].present?
           final_title = "<#{options[:page_title][:tag]}#{css}>#{final_title}</#{options[:page_title][:tag]}>"
         end
 
@@ -61,7 +61,7 @@ module Refinery
           return "<#{options[:ancestors][:tag]} class='#{options[:ancestors][:class]}'>#{title.join options[:ancestors][:separator]}#{options[:ancestors][:separator]}</#{options[:ancestors][:tag]}>#{final_title}".html_safe
         end
       end
-    
+
     end
   end
 end
