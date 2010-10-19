@@ -539,9 +539,139 @@ var link_dialog = {
   }
 }
 
+var page_layouts = {
+  // relevant 'instance' variables.
+  available: {},   // All the page_layouts available in the current theme.
+  current: '',     // The currently selected layout
+  original: '',    // The original layout
+  migrate_url: '', // The migration API url
+
+  init: function () {
+    page_layouts.init_dialog();
+
+
+    $('#page_layout_migration').hide();
+    $('#page_layout_picker').change(function(){
+      layout = $('#page_layout_picker').val();
+      page_options.layout.switch_to(layout);
+    });
+    $('#page_layout_commit_change').click(page_layouts.commit_changes);
+  },
+
+  init_dialog: function () {
+    page_layouts.dialog =  $('#page_layout_dialog').dialog({
+      title: 'Change layout',
+      modal: true,
+      resizable: false,
+      autoOpen: false,
+      width: 928,
+      height: 'auto',
+      autoResize: 'true'
+    });
+
+    $("#change_layout").click(function () {
+      page_layouts.dialog.dialog("open");
+    });
+  },
+
+  switch_to: function(layout)  {
+    // Initialize
+    page_layouts.current = layout;
+    $('#page_layout_migration').show();
+    $('#page_layout_migration').css('display: block');
+    var migrate_from = $('#page_layout_migrate_from');
+    var migrate_to =   $('#page_layout_migrate_to');
+    migrate_from.empty();
+    migrate_to.empty();
+
+    // Add migrate_from droppables.
+    $(page_layouts.available[page_layouts.original].parts).each( function(i, part) {
+      migrate_from.append('<li class="migrate_from" orginal_part_name="' + part + '">' + part + '</li>');
+    });
+
+    // Create migrate_to sortables
+    $(page_layouts.available[layout].parts).each( function(i, part) {
+      migrate_to.append('<div class="migrate_to_container"><p>' + part + '<ul class="migrate_to" to_part_name="' + part + '"></ul></div>');
+    });
+
+    migrate_to.append('<div class="migrate_cancel_container"><p>Remove (Cancel the migration of this part instance)</p><ul class="migrate_cancel"></ul></div>');
+
+    $('li.migrate_from'  ).draggable ({ helper: 'clone', connectToSortable:'ul.migrate_to'});     
+    $('ul.migrate_to'    ).sortable  ({ connectWith: 'ul.migrate_to, ul.migrate_cancel'});
+    $('ul.migrate_cancel').sortable  ({ receive: page_layouts.on_delete});
+  },
+
+  on_delete: function (evt, ui) {
+    $(evt.target).empty();
+  },
+
+  // This function fills a the datastructure needed for the migration, by traversing the DOM.
+  commit_changes: function (evt) {
+    evt.preventDefault();
+    var commit_parts = {};
+
+    // Loop the Sortables, and fill the commit_parts structure.
+    var migrations = $('#page_layout_migrate_to').find('.migrate_to');
+    for (var i  = 0; i < migrations.length; i++) {
+      var migrate_to = $(migrations[i]);
+      var to_part = migrate_to.attr('to_part_name');
+      var sources = migrate_to.find('li.migrate_from');
+      commit_parts[to_part] = [];
+
+      for (var j = 0; j < sources.length; j++) {
+        var source = $(sources[j]);
+        commit_parts[to_part].push(source.attr('orginal_part_name'));
+      }
+    }
+    page_layouts.migrate_layout(page_options.layout.current, commit_parts);
+  },
+
+  migrate_layout: function (new_layout, new_parts)
+  {
+    $.ajax({
+      url: page_layouts.layout.migrate_url,
+      type: 'post',
+      data:{
+        'layout': new_layout,
+        'available_parts': page_options.layout.available[page_options.layout.current].parts,
+        'migrate_parts': new_parts,
+        'authenticity_token': $("#authenticity_token").value
+      },
+      success: function(data, status){
+        if(status == "success" && data == "ok")
+        {
+          location.reload();
+        }
+        else
+        {
+          if (console)
+          {
+            console.log(data);
+            console.log(status);
+          }
+          alert("Failed: " + data.toString());
+        }
+      },
+      error: function (XMLHttpRequest, textStatus, errorThrown) {
+        if (console)
+        {
+          error = { http_request: XMLHttpRequest, text_status: textStatus, error: errorThrown }
+          console.log(error);
+        }
+        alert("Failed. Please reload the page, and try again");
+      }
+    });
+  }
+};
+
 var page_options = {
   initialised: false
-  ,init: function(enable_parts, new_part_url, del_part_url, change_page_layout, page_layouts, original_page_layout, page_layout_migrate_url){
+  ,init_with_layouts: function (layouts, current_layout, migration_url) {
+    page_options.init(false, false, false) 
+    page_layouts.init(layouts, current_layout, migration_url);
+
+  }
+  ,init: function(enable_parts, new_part_url, del_part_url) {
     // set the page tabs up, but ensure that all tabs are shown so that when wymeditor loads it has a proper height.
     // also disable page overflow so that scrollbars don't appear while the page is loading.
     $(document.body).addClass('hide-overflow');
@@ -558,27 +688,6 @@ var page_options = {
     this.show_options();
     this.title_type();
 
-    if (change_page_layout)
-    {
-      this.layout.available = page_layouts;
-      this.layout.current = this.layout.original  = original_page_layout;
-      this.layout.migrate_url = page_layout_migrate_url;
-      this.layout.init()
-
-      this.layout.dialog =  $('#page_layout_dialog').dialog({
-        title: 'Change layout',
-        modal: true,
-        resizable: false,
-        autoOpen: false,
-        width: 928,
-        height: 'auto',
-        autoResize: 'true'
-      });
-
-      $("#change_layout").click(function () {
-        page_options.layout.dialog.dialog("open");
-      });
-    }
 
     // Hook into the loaded function. This will be called when WYMeditor has done its thing.
     WYMeditor.loaded = function(){
@@ -612,114 +721,6 @@ var page_options = {
     });
   },
 
-  layout: {
-    // relevant 'instance' variables.
-    available: {},   // All the page_layouts available in the current theme.
-    current: '',     // The currently selected layout
-    original: '',    // The original layout
-    migrate_url: '', // The migration API url
-
-    init: function () {
-      $('#page_layout_migration').hide();
-      $('#page_layout_picker').change(function(){
-        layout = $('#page_layout_picker').val();
-        page_options.layout.switch_to(layout);
-      });
-      $('#page_layout_commit_change').click(page_options.layout.commit_changes);
-    },
-
-    switch_to: function(layout)
-    {
-      // Initialize
-      page_options.layout.current = layout;
-      $('#page_layout_migration').show();
-      $('#page_layout_migration').css('display: block');
-      var migrate_from = $('#page_layout_migrate_from');
-      var migrate_to =   $('#page_layout_migrate_to');
-      migrate_from.empty();
-      migrate_to.empty();
-
-      // Add migrate_from droppables.
-      $(page_options.layout.available[page_options.layout.original].parts).each( function(i, part) {
-        migrate_from.append('<li class="migrate_from" orginal_part_name="' + part + '">' + part + '</li>');
-      });
-
-      // Create migrate_to sortables
-      $(page_options.layout.available[layout].parts).each( function(i, part) {
-        migrate_to.append('<div class="migrate_to_container"><p>' + part + '<ul class="migrate_to" to_part_name="' + part + '"></ul></div>');
-      });
-
-      migrate_to.append('<div class="migrate_cancel_container"><p>Remove (Cancel the migration of this part instance)</p><ul class="migrate_cancel"></ul></div>');
-
-      $('li.migrate_from'  ).draggable ({ helper: 'clone', connectToSortable:'ul.migrate_to'});     
-      $('ul.migrate_to'    ).sortable  ({ connectWith: 'ul.migrate_to, ul.migrate_cancel'});
-      $('ul.migrate_cancel').sortable  ({ receive: page_options.layout.on_delete});
-    },
-
-    on_delete: function (evt, ui)
-    {
-      $(evt.target).empty();
-    },
-
-    // This function fills a the datastructure needed for the migration, by traversing the DOM.
-    commit_changes: function (evt) {
-      evt.preventDefault();
-      var commit_parts = {};
-
-      // Loop the Sortables, and fill the commit_parts structure.
-      var migrations = $('#page_layout_migrate_to').find('.migrate_to');
-      for (var i  = 0; i < migrations.length; i++) {
-        var migrate_to = $(migrations[i]);
-        var to_part = migrate_to.attr('to_part_name');
-        var sources = migrate_to.find('li.migrate_from');
-        commit_parts[to_part] = [];
-
-        for (var j = 0; j < sources.length; j++) {
-          var source = $(sources[j]);
-          commit_parts[to_part].push(source.attr('orginal_part_name'));
-        }
-      }
-
-      page_options.layout.migrate_layout(page_options.layout.current, commit_parts);
-    },
-
-    migrate_layout: function (new_layout, new_parts)
-    {
-      $.ajax({
-        url: page_options.layout.migrate_url,
-        type: 'post',
-        data:{
-          'layout': new_layout,
-          'available_parts': page_options.layout.available[page_options.layout.current].parts,
-          'migrate_parts': new_parts,
-          'authenticity_token': $("#authenticity_token").value
-        },
-        success: function(data, status){
-          if(status == "success" && data == "ok")
-          {
-            location.reload();
-          }
-          else
-          {
-            if (console)
-            {
-              console.log(data);
-              console.log(status);
-            }
-            alert("Failed: " + data.toString());
-          }
-        },
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-          if (console)
-          {
-            error = { http_request: XMLHttpRequest, text_status: textStatus, error: errorThrown }
-            console.log(error);
-          }
-          alert("Failed. Please reload the page, and try again");
-        }
-      });
-     }
-  },
 
   page_part_dialog: function(){
     $('#new_page_part_dialog').dialog({

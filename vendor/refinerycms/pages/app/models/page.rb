@@ -228,6 +228,7 @@ class Page < ActiveRecord::Base
     super_value
   end
 
+=begin
   def has_layout?
     not self.page_layout.blank?
   end
@@ -281,6 +282,7 @@ class Page < ActiveRecord::Base
       new_part.save!
     end
   end
+=end
 
   # In the admin area we use a slightly different title to inform the which pages are draft or hidden pages
   def title_with_meta

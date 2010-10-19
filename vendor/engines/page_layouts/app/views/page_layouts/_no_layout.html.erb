@@ -1,0 +1,9 @@
+<h2>This page has no layout</h2>
+<section>Please go to the site backend, and add a layout to this page</section>
+
+<% @page.parts.each do |part| %>
+  <h3><%= part.name %></h3>
+  <section id="<%= part.name %>">
+    <%=raw part.body %>
+  </section>
+<% end %>

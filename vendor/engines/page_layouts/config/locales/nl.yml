@@ -1,0 +1,20 @@
+nl:
+  plugins:
+    page_layouts:
+      title: Page Layouts
+  admin:
+    page_layouts:
+      index:
+        title: Page Layouts
+        create_new: Maak een nieuwe Page Layout
+        reorder: Wijzig de volgorde van de Page Layouts
+        reorder_done: Klaar met het wijzingen van de volgorde van de Page Layouts
+        sorry_no_results: Helaas! Er zijn geen resultaten gevonden.
+        no_items_yet: Er zijn nog geen Page Layouts. Druk op 'Maak een nieuwe Page Layout' om de eerste aan te maken.
+      page_layout:
+        view_live: Bekijk deze page layout op de website <br/><em>(opent een nieuw venster)</em>
+        edit: Bewerk deze page layout
+        delete: Verwijder deze page layout voor eeuwig
+  page_layouts:
+    show:
+      other: Andere Page Layouts

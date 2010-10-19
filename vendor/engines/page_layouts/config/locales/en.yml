@@ -1,0 +1,24 @@
+en:
+  shared:
+    admin:
+      image_picker:
+        image: image
+  plugins:
+    page_layouts:
+      title: Page Layouts
+  admin:
+    page_layouts:
+      index:
+        title: Page Layouts
+        create_new: Add New Page Layout
+        reorder: Reorder Page Layouts
+        reorder_done: Done Reordering Page Layouts
+        sorry_no_results: Sorry! There are no results found.
+        no_items_yet: There are no Page Layouts yet. Click "Add New Page Layout" to add your first page layout.
+      page_layout:
+        view_live: View this page layout live <br/><em>(opens in a new window)</em>
+        edit: Edit this page layout
+        delete: Remove this page layout forever
+  page_layouts:
+    show:
+      other: Other Page Layouts

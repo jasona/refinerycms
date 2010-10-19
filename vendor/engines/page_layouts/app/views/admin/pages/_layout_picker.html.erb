@@ -1,0 +1,44 @@
+<%
+  new_page         ||= false
+  current_layout_id  = new_page ? false : @page.layout.id
+%>
+<script>
+$(function () {
+  page_migration.init(<%=raw current_layout_id.to_json %>, <%= raw @page_layouts.to_json %>);
+});
+</script>
+
+<%= javascript_include_tag "jquery.json-2.2.min.js" %>
+
+<%= hidden_field_tag(:layout_id,          current_layout_id.to_json, :id => "layout_id") %>
+<%= hidden_field_tag(:mapping, "", :id => "mapping_value") %>
+<div class="clearfix">
+  <section id="layouts">
+    <h2>Layouts</h2>
+    <ul></ul>
+  </section>
+  <section id="details">
+    <h2>Details</h2>
+    <div id="details_description">
+      <strong>Description</strong>
+      <p></p>
+    </div>
+    <div id="details_preview">
+      <strong>Preview image</strong>
+      <p><img/></p>
+    </div>
+    <div id="details_parts">
+      <strong>Parts</strong>
+      <p></p>
+    </div>
+  </section>
+  <section id="migrate">
+    <h2>Migrate parts</h2>
+    <h3>Original parts</h3>
+    <div id="migrate_from" class="clearfix">
+    </div>
+    <h3>Migrate to</h3>
+    <div id="migrate_to">
+    </div>
+  </section>
+</div>

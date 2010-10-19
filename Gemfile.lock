@@ -13,6 +13,11 @@ PATH
       truncate_html (= 0.4)
       will_paginate (~> 3.0.pre)
 
+PATH
+  remote: vendor/engines
+  specs:
+    refinerycms-page_layouts (1.0)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -103,6 +108,7 @@ GEM
     mime-types (1.16)
     moretea-awesome_nested_set (1.4.3.1)
       activerecord (~> 3.0.0)
+    mysql (2.8.1)
     nokogiri (1.4.3.1)
     polyglot (0.3.1)
     rack (1.2.1)
@@ -179,11 +185,13 @@ DEPENDENCIES
   gherkin
   json_pure (~> 1.4.6)
   launchy
+  mysql (= 2.8.1)
   rack-test (~> 0.5.6)
   rails (= 3.0.0)
   refinerycms!
   refinerycms-i18n (~> 0.9.8.8)
   refinerycms-inquiries (~> 0.9.8.10)
+  refinerycms-page_layouts (= 1.0)!
   rmagick (~> 2.12.0)
   rspec (~> 2.0.0)
   rspec-core (~> 2.0.0)

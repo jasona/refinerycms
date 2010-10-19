@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20101006211228) do
+ActiveRecord::Schema.define(:version => 20101012163605) do
 
   create_table "images", :force => true do |t|
     t.string   "image_mime_type"
@@ -43,6 +43,19 @@ ActiveRecord::Schema.define(:version => 20101006211228) do
     t.datetime "created_at"
     t.datetime "updated_at"
   end
+
+  create_table "page_layouts", :force => true do |t|
+    t.string   "partial_name"
+    t.string   "title"
+    t.text     "description"
+    t.text     "parts"
+    t.string   "preview_image_uid"
+    t.integer  "position"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "page_layouts", ["id"], :name => "index_page_layouts_on_id"
 
   create_table "page_parts", :force => true do |t|
     t.integer  "page_id"
@@ -79,6 +92,7 @@ ActiveRecord::Schema.define(:version => 20101006211228) do
     t.integer  "rgt"
     t.integer  "depth"
     t.string   "cached_slug"
+    t.integer  "page_layout_id"
   end
 
   add_index "pages", ["depth"], :name => "index_pages_on_depth"

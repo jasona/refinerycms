@@ -6,6 +6,7 @@ gem 'rails',                    '= 3.0.0'
 # gem 'rails', :git => 'git://github.com/rails/rails.git'
 
 gem 'sqlite3-ruby',             :require => 'sqlite3'
+gem 'mysql', '2.8.1'
 
 # Use unicorn as the web server
 # gem 'unicorn'
@@ -89,3 +90,5 @@ end
 # Bundle gems for certain environments:
 
 # END REFINERY CMS DEVELOPMENT =================================================
+
+gem 'refinerycms-page_layouts', '1.0', :path => 'vendor/engines', :require => 'page_layouts'

@@ -1,0 +1,24 @@
+lolcat:
+  shared:
+    admin:
+      image_picker:
+        image: IMAGE
+  plugins:
+    page_layouts:
+      title: Page Layouts
+  admin:
+    page_layouts:
+      index:
+        title: Page Layouts
+        create_new: CREATE NEW Page Layout
+        reorder: REORDR Page Layouts
+        reorder_done: DUN REORDERIN Page Layouts
+        sorry_no_results: SRY! THAR R NO RESULTS FINDZ.
+        no_items_yet: THAR R NO Page Layouts YET. CLICK "CREATE NEW Page Layout" 2 ADD UR FURST page layout.
+      page_layout:
+        view_live: VIEW DIS page layout LIV <BR/><EM>(OPENS IN NEW WINDOW)</EM>
+        edit: EDIT DIS page layout
+        delete: REMOOV DIS page layout FOREVR
+  page_layouts:
+    show:
+      other: OTHR Page Layouts

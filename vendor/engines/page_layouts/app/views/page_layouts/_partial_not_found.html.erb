@@ -1,0 +1,9 @@
+<h2>Partial not found!</h2>
+<section>The partial specified by the layout (<%= @page.layout.partial %>))could not be found</section>
+
+<% @page.parts.each do |part| %>
+  <h3><%= part.name %></h3>
+  <section id="<%= part.name %>">
+    <%=raw part.body %>
+  </section>
+<% end %>

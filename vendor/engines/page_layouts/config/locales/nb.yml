@@ -1,0 +1,20 @@
+nb:
+  plugins:
+    page_layouts:
+      title: Page Layouts
+  admin:
+    page_layouts:
+      index:
+        title: Page Layouts
+        create_new: Lag en ny Page Layout
+        reorder: Endre rekkefølgen på Page Layouts
+        reorder_done: Ferdig å endre rekkefølgen Page Layouts
+        sorry_no_results: Beklager! Vi fant ikke noen resultater.
+        no_items_yet: Det er ingen Page Layouts enda. Klikk på "Lag en ny Page Layout" for å legge til din første page layout.
+      page_layout:
+        view_live: Vis hvordan denne page layout ser ut offentlig <br/><em>(åpner i et nytt vindu)</em>
+        edit: Rediger denne page layout
+        delete: Fjern denne page layout permanent
+  page_layouts:
+    show:
+      other: Andre Page Layouts
