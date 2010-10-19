@@ -1,6 +1,6 @@
 source 'http://rubygems.org'
 gem 'bundler',                  '~> 1.0.0'
-gem 'rails',                    '= 3.0.0'
+gem 'rails',                    '~> 3.0.1'
 
 # Bundle edge Rails instead:
 # gem 'rails', :git => 'git://github.com/rails/rails.git'
@@ -37,7 +37,7 @@ gem 'mysql', '2.8.1'
 gem 'refinerycms',              :path => '.'
 
 # Specify additional Refinery CMS Engines here (all optional):
-gem 'refinerycms-inquiries',    '~> 0.9.8.10'
+gem 'refinerycms-inquiries',    '~> 0.9.9.2'
 # gem 'refinerycms-news',       '~> 0.9.9'
 # gem 'refinerycms-portfolio',  '~> 0.9.8'
 # gem 'refinerycms-theming',    '~> 0.9.8.1'
