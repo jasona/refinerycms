@@ -3,7 +3,7 @@
   <%= submit_tag t('.create') %>
 <% end %>
 
-<% content_for :head do %>
+<% content_for :after_javascript_libraries do %>
   <%= javascript_include_tag 'page-layout-picker' %>
-  <%= stylesheet_link_tag 'page-layout-picker' %>
+  <%= stylesheet_link_tag    'page-layout-picker' %>
 <% end %>

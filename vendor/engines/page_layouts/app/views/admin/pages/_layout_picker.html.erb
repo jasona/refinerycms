@@ -2,16 +2,18 @@
   new_page         ||= false
   current_layout_id  = new_page ? false : @page.layout.id
 %>
-<script>
-$(function () {
-  page_migration.init(<%=raw current_layout_id.to_json %>, <%= raw @page_layouts.to_json %>);
-});
-</script>
+<% content_for :after_javascript_libraries do %>
+  <%= javascript_include_tag "jquery.json-2.2.min.js" %>
+  <script>
+  $(function () {
+    page_migration.init(<%=raw current_layout_id.to_json %>, <%= raw @page_layouts.to_json %>);
+  });
+  </script>
+<% end %>
 
-<%= javascript_include_tag "jquery.json-2.2.min.js" %>
-
-<%= hidden_field_tag(:layout_id,          current_layout_id.to_json, :id => "layout_id") %>
+<%= hidden_field_tag(:layout_id, current_layout_id.to_json, :id => "layout_id") %>
 <%= hidden_field_tag(:mapping, "", :id => "mapping_value") %>
+
 <div class="clearfix">
   <section id="layouts">
     <h2>Layouts</h2>
