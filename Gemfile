@@ -1,5 +1,5 @@
 source 'http://rubygems.org'
-gem 'bundler',                  '~> 1.0.0'
+gem 'bundler',                  '~> 1.0.3'
 gem 'rails',                    '~> 3.0.1'
 
 # Bundle edge Rails instead:
@@ -37,10 +37,11 @@ gem 'mysql', '2.8.1'
 gem 'refinerycms',              :path => '.'
 
 # Specify additional Refinery CMS Engines here (all optional):
-gem 'refinerycms-inquiries',    '~> 0.9.9.2'
+gem 'refinerycms-inquiries',    '~> 0.9.9.3'
+gem 'refinerycms-generators',   '~> 0.9.9', :git => 'git://github.com/resolve/refinerycms-generators.git'
 # gem 'refinerycms-news',       '~> 0.9.9'
 # gem 'refinerycms-portfolio',  '~> 0.9.8'
-# gem 'refinerycms-theming',    '~> 0.9.8.1'
+# gem 'refinerycms-theming',    '~> 0.9.8.2'
 # gem 'refinerycms-search',     '~> 0.9.8'
 
 # Add i18n support (optional, you can remove this if you really want to).
@@ -64,7 +65,7 @@ group :test do
   gem 'rspec-mocks',            RSPEC_VERSION, :require => 'rspec/mocks'
   gem 'rspec-rails',            RSPEC_VERSION
   # Cucumber
-  gem 'capybara'
+  gem 'capybara', :git => 'git://github.com/parndt/capybara.git'
   gem 'database_cleaner'
   gem 'cucumber-rails'
   gem 'cucumber'
@@ -72,7 +73,7 @@ group :test do
   gem 'launchy'
   gem 'gherkin'
   gem 'rack-test',              '~> 0.5.6'
-  # FIXME: JSON constant constants warnings
+  # FIXME: Update json_pure to 1.4.7 when it is released
   gem 'json_pure',              '~> 1.4.6', :require => 'json/pure'
   # Factory Girl
   gem 'factory_girl'
