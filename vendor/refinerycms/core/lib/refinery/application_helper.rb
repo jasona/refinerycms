@@ -12,5 +12,6 @@ module Refinery
     include Refinery::Helpers::SiteBarHelper
     include Refinery::Helpers::TagHelper
     include Refinery::Helpers::TranslationHelper
+    include Refinery::Helpers::RefinerySettingsHelper
   end
 end

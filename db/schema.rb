@@ -110,6 +110,7 @@ ActiveRecord::Schema.define(:version => 20101012163605) do
     t.string   "scoping"
     t.boolean  "restricted",              :default => false
     t.string   "callback_proc_as_string"
+    t.string   "form_value_type"
   end
 
   add_index "refinery_settings", ["name"], :name => "index_refinery_settings_on_name"

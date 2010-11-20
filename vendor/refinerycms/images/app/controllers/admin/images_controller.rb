@@ -35,28 +35,14 @@ class Admin::ImagesController < Admin::BaseController
       extra_condition[1] = true if extra_condition[1] == "true"
       extra_condition[1] = false if extra_condition[1] == "false"
       extra_condition[1] = nil if extra_condition[1] == "nil"
-      paginate_images({extra_condition[0].to_sym => extra_condition[1]})
-    else
-      paginate_images
     end
+
+    find_all_images(({extra_condition[0].to_sym => extra_condition[1]} if extra_condition.present?))
+    search_all_images if searching?
+
+    paginate_images
 
     render :action => "insert"
-  end
-
-  #This returns a url. If params[:size] is provided, it will generate a url for this size.
-  def url
-    find_image
-    if params[:size].present?
-      begin
-        size = params[:size].gsub('gt', '>').gsub('hash', '#')
-        thumbnail = @image.thumbnail(size)
-        render :json => { :error => false, :url => thumbnail.url, :width => thumbnail.width, :height => thumbnail.height }
-      rescue RuntimeError
-        render :json => { :error => true }
-      end
-    else
-      render :json => { :error => false, :url => @image.url, :width => @image.width, :height => @image.height }
-    end
   end
 
   def create
@@ -88,7 +74,7 @@ class Admin::ImagesController < Admin::BaseController
       end
     else
       if @images.all?{|i| i.valid?}
-        @image_id = @image.id unless @image.new_record?
+        @image_id = @image.id if @image.persisted?
         @image = nil
       end
       self.insert
@@ -106,11 +92,9 @@ protected
     @conditions = params[:conditions]
   end
 
-  def paginate_images(conditions={})
-    @images = Image.paginate :page => (@paginate_page_number ||= params[:page]),
-                             :conditions => conditions,
-                             :order => 'created_at DESC',
-                             :per_page => Image.per_page(from_dialog?, !@app_dialog)
+  def paginate_images
+    @images = @images.paginate(:page => (@paginate_page_number ||= params[:page]),
+                               :per_page => Image.per_page(from_dialog?, !@app_dialog))
   end
 
   def restrict_controller

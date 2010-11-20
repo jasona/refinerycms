@@ -133,7 +133,7 @@ module Refinery
       end
 
       # Copy in important files to the Rails app.
-      %w(.gitignore readme.md license.md config/routes.rb config/settings.rb config/cucumber.yml
+      %w(.gitignore .rspec readme.md license.md config/routes.rb config/settings.rb config/cucumber.yml
          lib/tasks/cucumber.rake lib/tasks/rspec.rake config/initializers/fix_rack.rb
          config/environments/development.rb config/environments/test.rb config/environments/production.rb
          config/initializers/acts_as_indexed_config.rb config/initializers/field_with_error_fix.rb).each do |file|
@@ -164,10 +164,10 @@ module Refinery
       end
 
       # Add refinery gems to the Gemfile
-      gemfile_contents = File.read(Refinery.root.join('Gemfile'))
+      gemfile_contents = Refinery.root.join('Gemfile').read
       refinery_gems = gemfile_contents.match(/# REFINERY CMS =+.*# END REFINERY CMS =+/m)[0]
-      File.open(@app_path.join('Gemfile'), "a") do |f|
-        f.write "\n" + refinery_gems + "\n\n# USER DEFINED\n" + @options[:gems].join("\n") + "\n# END USER DEFINED"
+      @app_path.join('Gemfile').open('a') do |f|
+        f.write "\n#{refinery_gems}\n\n# USER DEFINED\n#{@options[:gems].join("\n")}\n# END USER DEFINED"
       end
 
       # Change from development to production

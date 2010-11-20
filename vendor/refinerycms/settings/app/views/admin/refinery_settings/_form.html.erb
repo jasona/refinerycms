@@ -16,7 +16,13 @@
     </label>
     <span class="preview">- (<%= @refinery_setting.name %>)</span>
   <% end %>
-  <% unless action_name =~ /(new)|(create)/ or (help = t(".help.#{@refinery_setting.name}", :default => '')).blank?  %>
+  <% if current_user.has_role?(:superuser) and !@refinery_setting.persisted? %>
+    <div class='field'>
+      <%= f.label :form_value_type %>
+      <%= f.select :form_value_type, RefinerySetting::FORM_VALUE_TYPES -%>
+    </div>
+  <% end %>
+  <% unless action_name =~ /(new)|(create)/ or (help = t(".help.#{@refinery_setting.name}", :default => '')).blank? or @refinery_setting.form_value_type == 'check_box'  %>
     <p>
       <span><%= help %></span>
     </p>
@@ -31,10 +37,8 @@
   <% end %>
   </div>
   <div class='field'>
-    <%= f.label :value %>
-    <%= f.text_area :value, :value => @refinery_setting.form_value,
-                    :rows => 5,
-                    :class => 'widest' %>
+    <%= refinery_setting_title(f) %>
+    <%= refinery_setting_field(f, help) %>
   </div>
 
   <%= render :partial => "/shared/admin/form_actions",
@@ -46,6 +50,14 @@
                :delete_title => t('admin.refinery_settings.delete'),
                :delete_confirmation => t('shared.admin.delete.message',
                                          :title => @refinery_setting.name.to_s.titleize),
-               :hide_delete => (@refinery_setting.new_record? or !@refinery_setting.destroyable)
+               :hide_delete => (!@refinery_setting.persisted? or !@refinery_setting.destroyable or from_dialog?)
               } %>
 <% end -%>
+<% content_for :javascripts do %>
+  <script>
+    $('#refinery_setting_form_value_type').change(function(e) {
+      console.log(location_url = window.location.href.replace(/([\?|\&])form_value_type\=[^\&]*\&?/, ''));
+      window.location = location_url + ((location_url.indexOf("?") > -1 ? "&" : "?") + "form_value_type=" + $(this).val());
+    });
+  </script>
+<% end if current_user.has_role?(:superuser) %>

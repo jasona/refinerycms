@@ -1,7 +1,8 @@
 onOpenDialog = function(dialog) {
-  (dialog = $('.ui-dialog'))
-    .corner('6px')
-    .find('.ui-dialog-titlebar').corner('1px top');
+  (dialog = $('.ui-dialog')).find('.ui-dialog-titlebar').corner('1px top');
+  if(!$.browser.msie){
+    dialog.corner('6px');
+  }
   if (dialog.height() < $(window).height()) {
     if(iframed()) {
       $(parent.document.body).addClass('hide-overflow');
@@ -9,7 +10,7 @@ onOpenDialog = function(dialog) {
       $(document.body).addClass('hide-overflow');
     }
   }
-}
+};
 
 onCloseDialog = function(dialog) {
   if(iframed()) {
@@ -17,7 +18,7 @@ onCloseDialog = function(dialog) {
   } else {
     $(document.body).removeClass('hide-overflow');
   }
-}
+};
 
 var wymeditor_inputs = [];
 var wymeditors_loaded = 0;
@@ -109,7 +110,8 @@ var wymeditor_boot_options = $.extend({
 
   , iframeHtml:
     "<div class='wym_iframe wym_section'>"
-     + "<iframe id='WYMeditor_" + WYMeditor.INDEX + "' src='" + WYMeditor.IFRAME_BASE_PATH + "wymiframe' frameborder='0'"
+     + "<iframe id='WYMeditor_" + WYMeditor.INDEX + "' src='" + WYMeditor.IFRAME_BASE_PATH + "wymiframe'"
+     + " frameborder='0' marginheight='0' marginwidth='0' border='0'"
      + " onload='this.contentWindow.parent.WYMeditor.INSTANCES[" + WYMeditor.INDEX + "].initIframe(this);'></iframe>"
     +"</div>"
 
@@ -200,6 +202,15 @@ var wymeditor_boot_options = $.extend({
 
     $('.field.hide-overflow').removeClass('hide-overflow').css('height', 'auto');
   }
+  , postInitDialog: function(wym) {
+    if($.browser.msie) {
+      ($the_ui_dialog = $('.ui-dialog')).css('height', 
+        $the_ui_dialog.find('iframe').height() 
+        + $the_ui_dialog.find('iframe').contents().find('.form-actions').height() 
+        - 12
+      );
+    }
+  }
   , lang: (typeof(I18n.locale) != "undefined" ? I18n.locale : 'en')
 }, custom_wymeditor_boot_options);
 
@@ -210,7 +221,7 @@ $(function()
 {
   wymeditor_inputs = $('.wymeditor');
   wymeditor_inputs.each(function(input) {
-    if ((containing_field = $(this).parents('.field')).get(0).style.height == '') {
+    if ((containing_field = $(this).parents('.field')).get(0).style.height === '') {
       containing_field.addClass('hide-overflow')
                       .css('height', $(this).outerHeight() - containing_field.offset().top + $(this).offset().top + 45);
     }
